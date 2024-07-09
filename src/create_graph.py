@@ -2,6 +2,7 @@ import configparser
 import argparse
 import openai
 from utils import RequestParams, chat_completion_request
+import xml.etree.ElementTree as ET
 
 config = configparser.ConfigParser()
 config.read('src/config.ini')
@@ -9,43 +10,71 @@ config.read('src/config.ini')
 OPENAI_KEY = config['DEFAULT']['OPENAI_KEY']
 GPT_MODEL = config['DEFAULT']['GPT_MODEL']
 
+def parse_output(output):
+    nodes = []
+    edges = []
+    for line in output.strip().split(';'):
+        if line:
+            if line.startswith('r'):
+                parts = line.strip('"').split('|')
+                edges.append((parts[0], parts[1], parts[2], parts[3], parts[4]))
+            elif line.startswith('c'):
+                parts = line.strip('"').split('|')
+                nodes.append((parts[0], parts[1], parts[2]))
+            else:
+                continue
+    return nodes, edges
 
 
 def main():
-    subject = input('Enter the subject of the graph: ')
     client = openai.Client(api_key=OPENAI_KEY)
 
-    # Get concepts and topics for the given subject
-    prompt = 'List the key concepts and topics covered in a given subject.'
-    messages = [{'role': 'system', 'content': prompt}, {'role': 'user', 'content': subject}]
-    params = RequestParams(client, messages=messages, model=GPT_MODEL)
+    prompt = open('src/entity_extraction.txt', 'r').read()
+    msg = open('src/example.txt', 'r').read()
+    messages = [{'role': 'system', 'content': prompt}, {'role': 'user', 'content': msg}]
+    params = RequestParams(client, messages=messages, model=GPT_MODEL, max_tokens=4096, temperature=0.2, top_p=0.1)
     response = chat_completion_request(params)
-    concepts = response.choices[0].message.content
-    print(f'Key concepts and topics covered in {subject}: {concepts}\n')
 
-    # Get connections between the concepts
-    prompt = 'You will be given a list of concepts. For each of that concept, list the prerequisite concepts that need to be understood first.'
-    messages = [{'role': 'system', 'content': prompt}, {'role': 'user', 'content': concepts}]
-    params = RequestParams(client, messages=messages, model=GPT_MODEL)
-    response = chat_completion_request(params)
-    connections = response.choices[0].message.content
-    print(f'Connections between the concepts: {connections}\n')
+    response = response.choices[0].message.content.replace('\n', '')
+    print(response)
+    nodes, edges = parse_output(response)
+    nodes.insert(0, ("concept", "8th grade math", "major-concept"))
+    print(nodes)
+    print(edges)
 
-    # Organize into areas
-    prompt = 'You will be given a list of concepts. Organize these concepts into logical areas or modules. Each area should contain related concepts.'
-    messages = [{'role': 'system', 'content': prompt}, {'role': 'user', 'content': concepts}]
-    params = RequestParams(client, messages=messages, model=GPT_MODEL)
-    response = chat_completion_request(params)
-    areas = response.choices[0].message.content
-    print(f'Areas or modules: {areas}\n')
+    
+    # Create the root element
+    graphml = ET.Element("graphml", xmlns="http://graphml.graphdrawing.org/xmlns")
 
-    # Create a graph
-    prompt = 'Given concepts, dependencies and areas of concepts, describe how to create a two-directional graph.'
-    messages = [{'role': 'system', 'content': prompt}, {'role': 'user', 'content': f'Concepts: {concepts}\nConnections: {connections}\nAreas: {areas}'}]
-    params = RequestParams(client, messages=messages, model=GPT_MODEL)
-    response = chat_completion_request(params)
-    graph = response.choices[0].message.content
-    print(f'Graph: {graph}\n')
+    # Create keys for node and edge data
+    ET.SubElement(graphml, "key", id="d0", **{"for": "node", "attr.name": "type", "attr.type": "string"})
+    ET.SubElement(graphml, "key", id="name", **{"for": "edge", "attr.name": "name", "attr.type": "string"})
+    ET.SubElement(graphml, "key", id="weight", **{"for": "edge", "attr.name": "weight", "attr.type": "integer"})
+
+    # Create the graph element
+    graph = ET.SubElement(graphml, "graph", id="G", edgedefault="directed")
+
+    # Add nodes
+    node_elements = {}
+    for node in nodes:
+        concept, name, type_ = node
+        node_element = ET.SubElement(graph, "node", id=name)
+        data_element = ET.SubElement(node_element, "data", key="d0")
+        data_element.text = type_
+        node_elements[name] = node_element
+
+    # Add edges
+    for edge in edges:
+        relationship, source, target, type_, weight = edge
+        edge_element = ET.SubElement(graph, "edge", source=source, target=target)
+        data_name = ET.SubElement(edge_element, "data", key="name")
+        data_name.text = type_
+        data_weight = ET.SubElement(edge_element, "data", key="weight")
+        data_weight.text = weight
+
+    # Convert the tree to a string
+    tree = ET.ElementTree(graphml)
+    tree.write("hierarchical_graph_with_intra_level.graphml", encoding="utf-8", xml_declaration=True)
 
 if __name__ == '__main__':
     main()
