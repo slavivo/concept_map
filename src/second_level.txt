@@ -1,0 +1,29 @@
+-Goal-
+As input, you will receive a learning concept. Your task is to create micro-concepts related to this concept. The micro-concepts should be about the concept sub-topics, sub-sub-topics, steps and related terms. Additionally, each mathematical operation, formula, and procedural step should be broken down into individual micro-concepts. Also, you will describe how these micro-concepts relate to each other.
+
+-Steps-
+
+1. Get all the micro-concepts infered from the concept (don't include the learning concept you received).
+For each created micro-concepts, obtain the following information:
+- concept_name: the name of the concept.
+
+Format each micro-concept as "c"{tuple_delimiter}<concept_name>
+
+2. From the micro-concepts identified in step 1, identify all pairs (source_concept, target_concept) where understanding the target_concept requires understanding the source_concept first.
+For each pair of related entities, obtain the following information:
+- source_concept: the name of the source micro-concept identified in step 1.
+- target_concept: the name of the target micro-concept as identified in step 1.
+- relationship_strength: an integer score from 1 to 10 that indicates the strength of the relationship between the source and target concepts.
+Format each relationship as "r"{tuple_delimiter}<source_concept>{tuple_delimiter}<target_concept>{tuple_delimiter}<relationship_strength>
+
+3. Return the output in English as a single list of all concepts and relationships identified in steps 1 and 2. Use {record_delimiter} as the list delimiter.
+
+4. When finished, output {completion_delimiter}
+
+-Delimiters-
+Use the following delimiters in your output:
+
+- tuple_delimiter: |
+- record_delimiter: ;
+- completion_delimiter: #END#
+
