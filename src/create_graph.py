@@ -7,14 +7,32 @@ import concurrent.futures
 import logging
 
 config = configparser.ConfigParser()
-config.read('src/config.ini')
+config.read("src/config.ini")
 
-OPENAI_KEY = config['DEFAULT']['OPENAI_KEY']
-GPT_MODEL = config['DEFAULT']['GPT_MODEL']
+OPENAI_KEY = config["DEFAULT"]["OPENAI_KEY"]
+GPT_MODEL = config["DEFAULT"]["GPT_MODEL"]
 
 client = openai.Client(api_key=OPENAI_KEY)
 
 logging.basicConfig(level=logging.INFO)
+
+
+def parse_line(line, nodes, edges, type_, size):
+    if line.startswith("r"):
+        parts = line.strip('"').split("|")
+        if len(parts) == 4:
+            edges.append((parts[0], parts[1], parts[2], "sibling", parts[3]))
+        else:
+            logging.info(f"Invalid edge: {line}")
+    elif line.startswith("c"):
+        parts = line.strip('"').split("|")
+        if len(parts) == 2:
+            nodes.append((parts[0], parts[1], type_, size))
+        else:
+            logging.info(f"Invalid node: {line}")
+    else:
+        return
+
 
 def parse_output(output, type_):
     nodes = []
@@ -26,79 +44,73 @@ def parse_output(output, type_):
         size = 6
     elif type_ == "major-concept":
         size = 15
-    for line in output.strip().split(';'):
+
+    for line in output.strip().split(";"):
         if line:
-            if line.startswith('r'):
-                parts = line.strip('"').split('|')
-                if len(parts) == 4:
-                    edges.append((parts[0], parts[1], parts[2], 'sibling', parts[3]))
-                else:
-                    logging.info(f"Invalid edge: {line}")
-            elif line.startswith('c'):
-                parts = line.strip('"').split('|')
-                if len(parts) == 2:
-                    nodes.append((parts[0], parts[1], type_, size))
-                else:
-                    logging.info(f"Invalid node: {line}")
-            else:
-                continue
+            parse_line(line, nodes, edges, type_, size)
+
     return nodes, edges
+
 
 def add_edges(nodes, edges, source_node, target_type):
     for node in nodes:
         if node[2] == target_type:
-            edges.append(("r", source_node, node[1], "parent-child", '10'))
+            edges.append(("r", source_node, node[1], "parent-child", "10"))
     return edges
+
 
 def process_message(msg):
     logging.info(f"Processing message: {msg}")
-    prompt = open('src/second_level.txt', 'r').read()
-    messages = [{'role': 'system', 'content': prompt}, {'role': 'user', 'content': f'Math for eights grade: {msg}'}]
-    params = RequestParams(client, messages=messages, model=GPT_MODEL, max_tokens=4096, temperature=0.2, top_p=0.1)
+    prompt = open("docs/second_level.txt", "r").read()
+    messages = [
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": f"Math for eights grade: {msg}"},
+    ]
+    params = RequestParams(
+        client,
+        messages=messages,
+        model=GPT_MODEL,
+        max_tokens=4096,
+        temperature=0.2,
+        top_p=0.1,
+    )
     response = chat_completion_request(params)
 
-    response = response.choices[0].message.content.replace('\n', '')
+    response = response.choices[0].message.content.replace("\n", "")
     nodes_, edges_ = parse_output(response, "micro-concept")
     edges_ = add_edges(nodes_, edges_, msg, "micro-concept")
     return nodes_, edges_
 
-def main():
-    # First level
-    prompt = open('src/first_level.txt', 'r').read()
-    msg = open('src/example.txt', 'r').read()
-    messages = [{'role': 'system', 'content': prompt}, {'role': 'user', 'content': msg}]
-    params = RequestParams(client, messages=messages, model=GPT_MODEL, max_tokens=4096, temperature=0.2, top_p=0.1)
-    response = chat_completion_request(params)
 
-    response = response.choices[0].message.content.replace('\n', '')
-    nodes, edges = parse_output(response, "concept")
-    edges = add_edges(nodes, edges, "8th grade math", "concept")
-    nodes.insert(0, ("concept", "8th grade math", "major-concept", 15))
-
-    # Second level
-    prompt = open('src/second_level.txt', 'r').read()
-    msgs = [n[1] for n in nodes if n[2] == "concept"]
-    all_nodes = []
-    all_edges = []
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        results = executor.map(process_message, msgs)
-
-        for nodes_, edges_ in results:
-            all_nodes.extend(nodes_)
-            all_edges.extend(edges_)
-
-    nodes.extend(all_nodes)
-    edges.extend(all_edges)
-    
+def create_tree(nodes, edges):
     # Create the root element
     graphml = ET.Element("graphml", xmlns="http://graphml.graphdrawing.org/xmlns")
 
     # Create keys for node and edge data
-    ET.SubElement(graphml, "key", id="d0", **{"for": "node", "attr.name": "type", "attr.type": "string"})
-    ET.SubElement(graphml, "key", id="size_", **{"for": "node", "attr.name": "size_", "attr.type": "integer"})    
-    ET.SubElement(graphml, "key", id="name", **{"for": "edge", "attr.name": "name", "attr.type": "string"})
-    ET.SubElement(graphml, "key", id="weight", **{"for": "edge", "attr.name": "weight", "attr.type": "integer"})
+    ET.SubElement(
+        graphml,
+        "key",
+        id="d0",
+        **{"for": "node", "attr.name": "type", "attr.type": "string"},
+    )
+    ET.SubElement(
+        graphml,
+        "key",
+        id="size_",
+        **{"for": "node", "attr.name": "size_", "attr.type": "integer"},
+    )
+    ET.SubElement(
+        graphml,
+        "key",
+        id="name",
+        **{"for": "edge", "attr.name": "name", "attr.type": "string"},
+    )
+    ET.SubElement(
+        graphml,
+        "key",
+        id="weight",
+        **{"for": "edge", "attr.name": "weight", "attr.type": "integer"},
+    )
 
     # Create the graph element
     graph = ET.SubElement(graphml, "graph", id="G", edgedefault="directed")
@@ -127,7 +139,48 @@ def main():
 
     # Convert the tree to a string
     tree = ET.ElementTree(graphml)
-    tree.write("hierarchical_graph_with_intra_level.graphml", encoding="utf-8", xml_declaration=True)
+    tree.write("docs/concept_map.graphml", encoding="utf-8", xml_declaration=True)
 
-if __name__ == '__main__':
+
+def main():
+    # First level
+    prompt = open("docs/first_level.txt", "r").read()
+    msg = open("docs/example.txt", "r").read()
+    messages = [{"role": "system", "content": prompt}, {"role": "user", "content": msg}]
+    params = RequestParams(
+        client,
+        messages=messages,
+        model=GPT_MODEL,
+        max_tokens=4096,
+        temperature=0.2,
+        top_p=0.1,
+    )
+    response = chat_completion_request(params)
+
+    response = response.choices[0].message.content.replace("\n", "")
+    nodes, edges = parse_output(response, "concept")
+    edges = add_edges(nodes, edges, "8th grade math", "concept")
+    nodes.insert(0, ("concept", "8th grade math", "major-concept", 15))
+
+    # Second level
+    prompt = open("docs/second_level.txt", "r").read()
+    msgs = [n[1] for n in nodes if n[2] == "concept"]
+    all_nodes = []
+    all_edges = []
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        results = executor.map(process_message, msgs)
+
+        for nodes_, edges_ in results:
+            all_nodes.extend(nodes_)
+            all_edges.extend(edges_)
+
+    nodes.extend(all_nodes)
+    edges.extend(all_edges)
+
+    # Create the graph
+    create_tree(nodes, edges)
+
+
+if __name__ == "__main__":
     main()
