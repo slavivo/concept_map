@@ -2,10 +2,17 @@ import dash
 from dash import dcc, html, Input, Output, State
 import dash_cytoscape as cyto
 import pickle
+import argparse
 
 app = dash.Dash(__name__)
 
-with open('docs/graph.pkl', 'rb') as f:
+# add argument -f to specify the file
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--file", help="The file to load the graph from (.pkl file)", required=True)
+args = parser.parse_args()
+
+with open(args.file, 'rb') as f:
     main_nodes, main_edges, subgraphs = pickle.load(f)
 
 app.layout = html.Div([
