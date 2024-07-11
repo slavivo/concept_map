@@ -146,10 +146,9 @@ def create_dashscape_tree(nodes, edges):
     major_nodes = [n[1] for n in nodes if n[2] == "major-concept" or n[2] == "concept"]
     major_nodes = set(major_nodes)
     dashscape_major_nodes = [{'data': {'id': n, 'label': n}} for n in major_nodes]
-    major_edges = set()
-    for e in edges:
-        if e[1] in major_nodes and e[2] in major_nodes and e not in major_edges:
-            major_edges.add(e)
+    major_edges = [e for e in edges if e[1] in major_nodes and e[2] in major_nodes]
+    major_edges = set(major_edges)
+    print(major_edges)
     dashscape_major_edges = [{'data': {'source': e[1], 'target': e[2]}} for e in major_edges]
 
     edge_major_to_micro = [e for e in edges if e[1] in major_nodes and e[2] not in major_nodes]
@@ -198,6 +197,8 @@ def main():
     all_nodes = []
     all_edges = []
 
+    print(f'Edges: {edges}')
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
         results = executor.map(process_message, msgs)
 
@@ -206,11 +207,18 @@ def main():
             all_edges.extend(edges_)
 
     nodes.extend(all_nodes)
+    major_nodes = [n[1] for n in nodes if n[2] == "major-concept" or n[2] == "concept"]
+    major_nodes = set(major_nodes)
+    edges_remove = {e for e in all_edges if e[1] in major_nodes and e[2] in major_nodes}
+    all_edges = [e for e in all_edges if e not in edges_remove]
+
+    # Remove duplicate edges from main concepts
+
     edges.extend(all_edges)
 
     # Create the graph
-    create_graphml_tree(nodes, edges)
     _,_,_, = create_dashscape_tree(nodes, edges)
+    create_graphml_tree(nodes, edges)
 
 
 if __name__ == "__main__":

@@ -1,15 +1,15 @@
 -Goal-
-As input, you will receive a learning concept. Your task is to create micro-concepts related to this concept. The micro-concepts should be about the concept sub-topics, sub-sub-topics, steps and related terms. Additionally, each mathematical operation, formula, and procedural step should be broken down into individual micro-concepts. Also, you will describe how these micro-concepts relate to each other.
+You are tasked with generating a knowledge graph for a specific concept. The goal is to break down the concept into its smallest, most fundamental parts, each of which represents a micro-concept, fact, skill, or a piece of knowledge that a student needs to master. The graph should indicate the order in which these parts should be learned, with directed edges showing the prerequisites for each node.
+
 
 -Steps-
-
 1. Get all the micro-concepts infered from the concept (don't include the learning concept you received).
 For each created micro-concepts, obtain the following information:
 - concept_name: the name of the concept.
 
 Format each micro-concept as "c"{tuple_delimiter}<concept_name>
 
-2. From the micro-concepts identified in step 1, identify all pairs (source_concept, target_concept) where understanding the target_concept requires understanding the source_concept first.
+2. From the micro-concepts identified in step 1, identify all pairs (source_concept, target_concept) where understanding the target_concept requires understanding the source_concept first. These relationships should form a knowledge graph that determines the order of study of the student.
 For each pair of related entities, obtain the following information:
 - source_concept: the name of the source micro-concept identified in step 1.
 - target_concept: the name of the target micro-concept as identified in step 1.
