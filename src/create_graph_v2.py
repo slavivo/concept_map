@@ -5,7 +5,6 @@ from utils import RequestParams, chat_completion_request
 import xml.etree.ElementTree as ET
 import concurrent.futures
 import logging
-import pickle
 
 config = configparser.ConfigParser()
 config.read("src/config.ini")
@@ -83,7 +82,7 @@ def process_message(msg):
     return nodes_, edges_
 
 
-def create_graphml_tree(nodes, edges):
+def create_tree(nodes, edges):
     # Create the root element
     graphml = ET.Element("graphml", xmlns="http://graphml.graphdrawing.org/xmlns")
 
@@ -142,39 +141,9 @@ def create_graphml_tree(nodes, edges):
     tree = ET.ElementTree(graphml)
     tree.write("docs/concept_map.graphml", encoding="utf-8", xml_declaration=True)
 
-def create_dashscape_tree(nodes, edges):
-    major_nodes = [n[1] for n in nodes if n[2] == "major-concept" or n[2] == "concept"]
-    major_nodes = set(major_nodes)
-    dashscape_major_nodes = [{'data': {'id': n, 'label': n}} for n in major_nodes]
-    major_edges = set()
-    for e in edges:
-        if e[1] in major_nodes and e[2] in major_nodes and e not in major_edges:
-            major_edges.add(e)
-    dashscape_major_edges = [{'data': {'source': e[1], 'target': e[2]}} for e in major_edges]
-
-    edge_major_to_micro = [e for e in edges if e[1] in major_nodes and e[2] not in major_nodes]
-
-    subgraphs = {}
-    for node in major_nodes:
-        tmp_nodes = set()
-        subgraphs[node] = {
-            'nodes': [],
-            'edges': []
-        }
-        for edge in edge_major_to_micro:
-            if edge[1] == node:
-                tmp_nodes.add(edge[2])
-                subgraphs[node]['nodes'].append({'data': {'id': edge[2], 'label': edge[2]}})
-        subgraphs[node]['edges'] = [{'data': {'source': edge[1], 'target': edge[2]}} for edge in edges if edge[1] in tmp_nodes and edge[2] in tmp_nodes]
-
-    with open ('docs/graph.pkl', 'wb') as f:
-        pickle.dump((dashscape_major_nodes, dashscape_major_edges, subgraphs), f)
-    return dashscape_major_nodes, dashscape_major_edges, subgraphs
-
 
 def main():
-    # First level
-    prompt = open("docs/first_level.txt", "r").read()
+    prompt = open("docs/graph_create.txt", "r").read()
     msg = open("docs/example.txt", "r").read()
     messages = [{"role": "system", "content": prompt}, {"role": "user", "content": msg}]
     params = RequestParams(
@@ -189,29 +158,11 @@ def main():
 
     response = response.choices[0].message.content.replace("\n", "")
     nodes, edges = parse_output(response, "concept")
-    edges = add_edges(nodes, edges, "8th grade math", "concept")
-    nodes.insert(0, ("concept", "8th grade math", "major-concept", 15))
 
-    # Second level
-    prompt = open("docs/second_level.txt", "r").read()
-    msgs = [n[1] for n in nodes if n[2] == "concept"]
-    all_nodes = []
-    all_edges = []
+    logging.info(f"Nodes: {nodes}")
+    logging.info(f"Edges: {edges}")
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        results = executor.map(process_message, msgs)
-
-        for nodes_, edges_ in results:
-            all_nodes.extend(nodes_)
-            all_edges.extend(edges_)
-
-    nodes.extend(all_nodes)
-    edges.extend(all_edges)
-
-    # Create the graph
-    create_graphml_tree(nodes, edges)
-    _,_,_, = create_dashscape_tree(nodes, edges)
-
+    create_tree(nodes, edges)
 
 if __name__ == "__main__":
     main()

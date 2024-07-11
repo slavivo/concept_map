@@ -1,5 +1,5 @@
 -Goal-
-As input, you receive a text outlining a specific lesson. Your task is to create as many concepts as possible from this outline. The concepts should cover the whole outline. Also, you will describe how these relate to each other.
+You are tasked with generating a knowledge graph for a specific subject or a learning area. Your must create concepts that should cover the whole subject/learning area. Also, you will describe how these relate to each other.
 
 -Steps-
 
