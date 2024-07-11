@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 import concurrent.futures
 import logging
 import pickle
+from functools import partial
+import datetime
 
 config = configparser.ConfigParser()
 config.read("src/config.ini")
@@ -60,12 +62,12 @@ def add_edges(nodes, edges, source_node, target_type):
     return edges
 
 
-def process_message(msg):
+def process_message(msg, study_level, language):
     logging.info(f"Processing message: {msg}")
     prompt = open("docs/second_level.txt", "r").read()
     messages = [
         {"role": "system", "content": prompt},
-        {"role": "user", "content": f"Math for eights grade: {msg}"},
+        {"role": "user", "content": f"Concept level: {study_level}\nLanguage: {language}\nConcept: {msg}"},
     ]
     params = RequestParams(
         client,
@@ -140,7 +142,7 @@ def create_graphml_tree(nodes, edges):
 
     # Convert the tree to a string
     tree = ET.ElementTree(graphml)
-    tree.write("docs/concept_map.graphml", encoding="utf-8", xml_declaration=True)
+    tree.write(f"docs/grap_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.graphml", encoding="utf-8", xml_declaration=True)
 
 def create_dashscape_tree(nodes, edges):
     major_nodes = [n[1] for n in nodes if n[2] == "major-concept" or n[2] == "concept"]
@@ -166,16 +168,18 @@ def create_dashscape_tree(nodes, edges):
                 subgraphs[node]['nodes'].append({'data': {'id': edge[2], 'label': edge[2]}})
         subgraphs[node]['edges'] = [{'data': {'source': edge[1], 'target': edge[2]}} for edge in edges if edge[1] in tmp_nodes and edge[2] in tmp_nodes]
 
-    with open ('docs/graph.pkl', 'wb') as f:
+    with open (f'docs/graph_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
         pickle.dump((dashscape_major_nodes, dashscape_major_edges, subgraphs), f)
-    return dashscape_major_nodes, dashscape_major_edges, subgraphs
 
 
 def main():
+    study_level = input("Enter the study level: ")
+    language = input("Enter the language: ")
+
     # First level
     prompt = open("docs/first_level.txt", "r").read()
-    msg = open("docs/example.txt", "r").read()
-    messages = [{"role": "system", "content": prompt}, {"role": "user", "content": msg}]
+    msg = open("docs/input.txt", "r").read()
+    messages = [{"role": "system", "content": prompt}, {"role": "user", "content": f"Study level: {study_level}\nLanguage: {language}\nSubject: {msg}"}]
     params = RequestParams(
         client,
         messages=messages,
@@ -188,8 +192,8 @@ def main():
 
     response = response.choices[0].message.content.replace("\n", "")
     nodes, edges = parse_output(response, "concept")
-    edges = add_edges(nodes, edges, "8th grade math", "concept")
-    nodes.insert(0, ("concept", "8th grade math", "major-concept", 15))
+    edges = add_edges(nodes, edges, study_level, "concept")
+    nodes.insert(0, ("concept", study_level, "major-concept", 15))
 
     # Second level
     prompt = open("docs/second_level.txt", "r").read()
@@ -199,8 +203,10 @@ def main():
 
     print(f'Edges: {edges}')
 
+    process_message_partial = partial(process_message, study_level=study_level, language=language)
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        results = executor.map(process_message, msgs)
+        results = executor.map(process_message_partial, msgs)
 
         for nodes_, edges_ in results:
             all_nodes.extend(nodes_)
@@ -213,11 +219,10 @@ def main():
     all_edges = [e for e in all_edges if e not in edges_remove]
 
     # Remove duplicate edges from main concepts
-
     edges.extend(all_edges)
 
-    # Create the graph
-    _,_,_, = create_dashscape_tree(nodes, edges)
+    # Create .graphml and dashscape tree
+    create_dashscape_tree(nodes, edges)
     create_graphml_tree(nodes, edges)
 
 

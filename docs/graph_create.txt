@@ -3,6 +3,7 @@ You are tasked with generating a knowledge graph for a specific subject or a lea
 
 -Input-
 Subject/learning area
+Language used for the output
 
 -Steps-
 1. Identify the concepts, facts, skills, and knowledge pieces that constitute the subject or learning area.
@@ -18,7 +19,7 @@ For each pair of related entities, obtain the following information:
 - relationship_strength: an integer score from 1 to 10 that indicates the strength of the relationship between the source and target entities.
 Format each relationship as "r"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_strength>
 
-3. Return the output in English as a single list of all entities and relationships identified in steps 1 and 2. Use {record_delimiter} as the list delimiter.
+3. Return the output in the given language as a single list of all entities and relationships identified in steps 1 and 2. Use {record_delimiter} as the list delimiter.
 
 4. When finished, output #END#
 

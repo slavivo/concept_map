@@ -5,6 +5,7 @@ from utils import RequestParams, chat_completion_request
 import xml.etree.ElementTree as ET
 import concurrent.futures
 import logging
+import datetime
 
 config = configparser.ConfigParser()
 config.read("src/config.ini")
@@ -139,13 +140,16 @@ def create_tree(nodes, edges):
 
     # Convert the tree to a string
     tree = ET.ElementTree(graphml)
-    tree.write("docs/concept_map.graphml", encoding="utf-8", xml_declaration=True)
+    tree.write(f"docs/graph_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}", encoding="utf-8", xml_declaration=True)
 
 
 def main():
+    study_level = input("Enter the study level: ")
+    language = input("Enter the language: ")
+
     prompt = open("docs/graph_create.txt", "r").read()
-    msg = open("docs/example.txt", "r").read()
-    messages = [{"role": "system", "content": prompt}, {"role": "user", "content": msg}]
+    msg = open("docs/input.txt", "r").read()
+    messages = [{"role": "system", "content": prompt}, {"role": "user", "content": f"Study level: {study_level}\nLanguage: {language}\nSubject: {msg}"}]
     params = RequestParams(
         client,
         messages=messages,

@@ -1,9 +1,8 @@
 -Goal-
-You are tasked with generating a knowledge graph for a specific subject or a learning area. Your must create concepts that should cover the whole subject/learning area. Also, you will describe how these relate to each other.
+You are tasked with generating a knowledge graph for a given specific subject or a learning area. You must create concepts that should cover the whole subject/learning area. Also, you will describe how these relate to each other. The output should be in the given language.
 
 -Steps-
-
-1. Get all concepts.
+1. Get all concepts for the subject/learning area.
 For each concept created, obtain the following information:
 - concept_name: the name of the concept.
 
@@ -16,7 +15,7 @@ For each pair of related entities, obtain the following information:
 - relationship_strength: an integer score from 1 to 10 that indicates the strength of the relationship between the source and target concepts.
 Format each relationship as "r"{tuple_delimiter}<source_concept>{tuple_delimiter}<target_concept>{tuple_delimiter}<relationship_strength>
 
-3. Return the output in English as a single list of all concepts and relationships identified in steps 1 and 2. Use {record_delimiter} as the list delimiter.
+3. Return the output in the given language as a single list of all concepts and relationships identified in steps 1 and 2. Use {record_delimiter} as the list delimiter.
 
 4. When finished, output {completion_delimiter}
 
