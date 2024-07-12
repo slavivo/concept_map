@@ -20,24 +20,24 @@ client = openai.Client(api_key=OPENAI_KEY)
 logging.basicConfig(level=logging.INFO)
 
 
-def parse_line(line, nodes, edges, type_, size):
+def parse_line(line, nodes, edges, type_, size, parent):
     if line.startswith("r"):
         parts = line.strip('"').split("|")
         if len(parts) == 4:
-            edges.append((parts[0], parts[1], parts[2], "sibling", parts[3]))
+            edges.append((parts[1].lower().replace(" ", "_") + parent, parts[2].lower().replace(" ", "_") + parent, "sibling", parts[3]))
         else:
             logging.info(f"Invalid edge: {line}")
     elif line.startswith("c"):
         parts = line.strip('"').split("|")
         if len(parts) == 2:
-            nodes.append((parts[0], parts[1], type_, size))
+            nodes.append((parts[1].lower().replace(" ", "_") + parent, parts[1], type_, size))
         else:
             logging.info(f"Invalid node: {line}")
     else:
         return
 
 
-def parse_output(output, type_):
+def parse_output(output, type_, parent=''):
     nodes = []
     edges = []
     size = 0
@@ -47,27 +47,29 @@ def parse_output(output, type_):
         size = 6
     elif type_ == "major-concept":
         size = 15
+    if parent:
+        parent = "__" + parent.lower().replace(" ", "_")
 
     for line in output.strip().split(";"):
         if line:
-            parse_line(line, nodes, edges, type_, size)
+            parse_line(line, nodes, edges, type_, size, parent)
 
     return nodes, edges
 
 
-def add_edges(nodes, edges, source_node, target_type):
+def add_edges(nodes, edges, source_node_id, target_type):
     for node in nodes:
         if node[2] == target_type:
-            edges.append(("r", source_node, node[1], "parent-child", "10"))
+            edges.append((source_node_id, node[0], "parent-child", "10"))
     return edges
 
 
-def process_message(msg, study_level, language):
-    logging.info(f"Processing message: {msg}")
+def process_message(concept, study_level, language):
+    logging.info(f"Processing message: {concept[1]}")
     prompt = open("docs/second_level.txt", "r").read()
     messages = [
         {"role": "system", "content": prompt},
-        {"role": "user", "content": f"Concept level: {study_level}\nLanguage: {language}\nConcept: {msg}"},
+        {"role": "user", "content": f"Concept level: {study_level}\nLanguage: {language}\nConcept: {concept[1]}"},
     ]
     params = RequestParams(
         client,
@@ -80,8 +82,8 @@ def process_message(msg, study_level, language):
     response = chat_completion_request(params)
 
     response = response.choices[0].message.content.replace("\n", "")
-    nodes_, edges_ = parse_output(response, "micro-concept")
-    edges_ = add_edges(nodes_, edges_, msg, "micro-concept")
+    nodes_, edges_ = parse_output(response, "micro-concept", concept[1])
+    edges_ = add_edges(nodes_, edges_, concept[0], "micro-concept")
     return nodes_, edges_
 
 
@@ -121,8 +123,8 @@ def create_graphml_tree(nodes, edges):
     # Add nodes
     node_elements = {}
     for node in nodes:
-        concept, name, type_, size = node
-        node_element = ET.SubElement(graph, "node", id=name)
+        id_, name, type_, size = node
+        node_element = ET.SubElement(graph, "node", id=id_)
         data_element = ET.SubElement(node_element, "data", key="d0")
         data_element.text = type_
         data_element = ET.SubElement(node_element, "data", key="label")
@@ -133,7 +135,7 @@ def create_graphml_tree(nodes, edges):
 
     # Add edges
     for edge in edges:
-        relationship, source, target, type_, weight = edge
+        source, target, type_, weight = edge
         edge_element = ET.SubElement(graph, "edge", source=source, target=target)
         data_name = ET.SubElement(edge_element, "data", key="name")
         data_name.text = type_
@@ -142,18 +144,17 @@ def create_graphml_tree(nodes, edges):
 
     # Convert the tree to a string
     tree = ET.ElementTree(graphml)
-    tree.write(f"docs/grap_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.graphml", encoding="utf-8", xml_declaration=True)
+    tree.write(f"docs/graph_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.graphml", encoding="utf-8", xml_declaration=True)
 
 def create_dashscape_tree(nodes, edges):
-    major_nodes = [n[1] for n in nodes if n[2] == "major-concept" or n[2] == "concept"]
-    major_nodes = set(major_nodes)
-    dashscape_major_nodes = [{'data': {'id': n, 'label': n}} for n in major_nodes]
-    major_edges = [e for e in edges if e[1] in major_nodes and e[2] in major_nodes]
+    major_nodes = [n for n in nodes if n[2] == "major-concept" or n[2] == "concept"]
+    dashscape_major_nodes = [{'data': {'id': n[0], 'label': n[1]}} for n in major_nodes]
+    major_nodes = set([n[0] for n in major_nodes])
+    major_edges = [e for e in edges if e[0] in major_nodes and e[1] in major_nodes]
     major_edges = set(major_edges)
-    print(major_edges)
-    dashscape_major_edges = [{'data': {'source': e[1], 'target': e[2]}} for e in major_edges]
+    dashscape_major_edges = [{'data': {'source': e[0], 'target': e[1]}} for e in major_edges]
 
-    edge_major_to_micro = [e for e in edges if e[1] in major_nodes and e[2] not in major_nodes]
+    edge_major_to_micro = [e for e in edges if e[0] in major_nodes and e[1] not in major_nodes]
 
     subgraphs = {}
     for node in major_nodes:
@@ -163,23 +164,30 @@ def create_dashscape_tree(nodes, edges):
             'edges': []
         }
         for edge in edge_major_to_micro:
-            if edge[1] == node:
-                tmp_nodes.add(edge[2])
-                subgraphs[node]['nodes'].append({'data': {'id': edge[2], 'label': edge[2]}})
-        subgraphs[node]['edges'] = [{'data': {'source': edge[1], 'target': edge[2]}} for edge in edges if edge[1] in tmp_nodes and edge[2] in tmp_nodes]
+            if edge[0] == node:
+                tmp_nodes.add(edge[1])
+                subgraphs[node]['nodes'].append({'data': {'id': edge[1], 'label': edge[1].split('__')[0].replace('_', ' ').capitalize()}})
+        subgraphs[node]['edges'] = [{'data': {'source': edge[0], 'target': edge[1]}} for edge in edges if edge[0] in tmp_nodes and edge[1] in tmp_nodes]
 
     with open (f'docs/graph_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
         pickle.dump((dashscape_major_nodes, dashscape_major_edges, subgraphs), f)
 
 
 def main():
-    study_level = input("Enter the study level: ")
+    subject = input("Enter subject: ")
+    study_level = input("Enter study level: ")
     language = input("Enter the language: ")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--nooutput", action="store_true")
+    args = parser.parse_args()
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
 
     # First level
     prompt = open("docs/first_level.txt", "r").read()
-    msg = open("docs/input.txt", "r").read()
-    messages = [{"role": "system", "content": prompt}, {"role": "user", "content": f"Study level: {study_level}\nLanguage: {language}\nSubject: {msg}"}]
+    messages = [{"role": "system", "content": prompt}, {"role": "user", "content": f"Study level: {study_level}\nLanguage: {language}\nSubject: {subject}"}]
     params = RequestParams(
         client,
         messages=messages,
@@ -191,39 +199,34 @@ def main():
     response = chat_completion_request(params)
 
     response = response.choices[0].message.content.replace("\n", "")
-    nodes, edges = parse_output(response, "concept")
-    edges = add_edges(nodes, edges, study_level, "concept")
-    nodes.insert(0, ("concept", study_level, "major-concept", 15))
+    nodes, edges = parse_output(response, "concept", f'{study_level} {subject}')
+    major_label = f'{study_level} {subject}'
+    nodes.insert(0, (major_label.lower().replace(" ", "_"), major_label, "major-concept", 15))
+    edges = add_edges(nodes, edges, nodes[0][0], "concept")
+
+    logging.debug(f"First level nodes: {nodes}\n")
+    logging.debug(f"First level edges: {edges}\n")
 
     # Second level
     prompt = open("docs/second_level.txt", "r").read()
-    msgs = [n[1] for n in nodes if n[2] == "concept"]
-    all_nodes = []
-    all_edges = []
-
-    print(f'Edges: {edges}')
+    concepts = [n for n in nodes if n[2] == "concept"]
 
     process_message_partial = partial(process_message, study_level=study_level, language=language)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-        results = executor.map(process_message_partial, msgs)
+        results = executor.map(process_message_partial, concepts)
 
         for nodes_, edges_ in results:
-            all_nodes.extend(nodes_)
-            all_edges.extend(edges_)
+            nodes.extend(nodes_)
+            edges.extend(edges_)
 
-    nodes.extend(all_nodes)
-    major_nodes = [n[1] for n in nodes if n[2] == "major-concept" or n[2] == "concept"]
-    major_nodes = set(major_nodes)
-    edges_remove = {e for e in all_edges if e[1] in major_nodes and e[2] in major_nodes}
-    all_edges = [e for e in all_edges if e not in edges_remove]
-
-    # Remove duplicate edges from main concepts
-    edges.extend(all_edges)
+    logging.debug(f"Second level nodes: {nodes}\n")
+    logging.debug(f"Second level edges: {edges}\n")
 
     # Create .graphml and dashscape tree
-    create_dashscape_tree(nodes, edges)
-    create_graphml_tree(nodes, edges)
+    if not args.nooutput:
+        create_dashscape_tree(nodes, edges)
+        create_graphml_tree(nodes, edges)
 
 
 if __name__ == "__main__":
