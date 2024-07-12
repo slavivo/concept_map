@@ -107,6 +107,12 @@ def create_graphml_tree(nodes, edges):
     ET.SubElement(
         graphml,
         "key",
+        id="label",
+        **{"for": "node", "attr.name": "label", "attr.type": "string"},
+    )
+    ET.SubElement(
+        graphml,
+        "key",
         id="name",
         **{"for": "edge", "attr.name": "name", "attr.type": "string"},
     )
@@ -121,7 +127,6 @@ def create_graphml_tree(nodes, edges):
     graph = ET.SubElement(graphml, "graph", id="G", edgedefault="directed")
 
     # Add nodes
-    node_elements = {}
     for node in nodes:
         id_, name, type_, size = node
         node_element = ET.SubElement(graph, "node", id=id_)
@@ -131,7 +136,6 @@ def create_graphml_tree(nodes, edges):
         data_element.text = name
         data_size = ET.SubElement(node_element, "data", key="size_")
         data_size.text = str(size)
-        node_elements[name] = node_element
 
     # Add edges
     for edge in edges:
