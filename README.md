@@ -1,4 +1,4 @@
-# concept_map
+# Concept Map
 
 This project aims to create knowledge graphs that for a given subject/field, language and level of study. The nodes are hierarchical - the subject, concepts and micro-concepts belonging to the various concepts. The edges between the same-level nodes dictate the order in which they should be learnt. The edges between different-level nodes dictate the parent-child relationship between the nodes.
 
@@ -57,12 +57,9 @@ python3 src/dash_scape.py -f <path_to_pkl_graph_file>
 
 A knowledge graph for the subject "Mathematics" in English at the "8th grade" level.
 
-[View the knowledge graph](docs/third_graph.pdf)
+[View the knowledge graph here](docs/third_graph.pdf)
 
-<video width="320" height="240" controls>
-  <source src="docs/graph_video.webm" type="video/webm">
-  Your browser does not support the video tag.
-</video>
+![](docs/graph_video.gif)
 
 
 
