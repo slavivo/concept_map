@@ -1,8 +1,8 @@
 -Goal-
-You are tasked with generating a knowledge graph for a given specific subject or a learning area. You must create concepts that should cover the whole subject/learning area. Also, you will describe how these relate to each other. The output should be in the given language.
+You are tasked with generating a comprehensive knowledge graph for a specfied subject/concept/topic, tailored to a particular educational level and presented in a specified language. You must create concepts that should cover the whole subject/learning area. Also, you will describe how these relate to each other. The output should be in the given language.
 
 -Steps-
-1. Get all concepts for the subject/learning area.
+1. Get three concepts for the subject/learning area.
 For each concept created, obtain the following information:
 - concept_name: the name of the concept.
 

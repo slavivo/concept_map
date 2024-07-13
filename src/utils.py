@@ -2,6 +2,9 @@ import numpy as np
 from typing import Dict
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
+import datetime
+import xml.etree.ElementTree as ET
+import pickle
 
 DEF_MODEL = 'gpt-4o'
 
@@ -107,3 +110,138 @@ def print_logprobs(logprobs):
 
     for category, prob in categories_probs:
         print(f"Category: {category}, linear probability: {np.round(prob*100,2)}")
+
+
+class Node:
+    def __init__(self, id_, label, type_, size):
+        self.id = id_
+        self.label = label
+        self.type = type_
+        self.size = size
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'label': self.label,
+            'type': self.type,
+            'size': self.size
+        }
+
+
+class Edge:
+    def __init__(self, source, target, type_, weight):
+        self.source = source
+        self.target = target
+        self.type = type_
+        self.weight = weight
+
+    def to_dict(self):
+        return {
+            'source': self.source,
+            'target': self.target,
+            'type': self.type,
+            'weight': self.weight
+        }
+
+
+def create_graphml_tree(nodes, edges):
+    '''
+    This function creates a graphml tree from the nodes and edges.
+
+    Parameters:
+    nodes (list): The list of nodes.
+    edges (list): The list of edges.
+    '''
+    graphml = ET.Element("graphml", xmlns="http://graphml.graphdrawing.org/xmlns")
+
+    # Create keys for node and edge data
+    ET.SubElement(
+        graphml,
+        "key",
+        id="d0",
+        **{"for": "node", "attr.name": "type", "attr.type": "string"},
+    )
+    ET.SubElement(
+        graphml,
+        "key",
+        id="size_",
+        **{"for": "node", "attr.name": "size_", "attr.type": "integer"},
+    )
+    ET.SubElement(
+        graphml,
+        "key",
+        id="label",
+        **{"for": "node", "attr.name": "label", "attr.type": "string"},
+    )
+    ET.SubElement(
+        graphml,
+        "key",
+        id="name",
+        **{"for": "edge", "attr.name": "name", "attr.type": "string"},
+    )
+    ET.SubElement(
+        graphml,
+        "key",
+        id="weight",
+        **{"for": "edge", "attr.name": "weight", "attr.type": "integer"},
+    )
+
+    graph = ET.SubElement(graphml, "graph", id="G", edgedefault="directed")
+
+    # Add nodes
+    for node in nodes:
+        node_element = ET.SubElement(graph, "node", id=node.id)
+        data_element = ET.SubElement(node_element, "data", key="d0")
+        data_element.text = node.type
+        data_element = ET.SubElement(node_element, "data", key="label")
+        data_element.text = node.label
+        data_size = ET.SubElement(node_element, "data", key="size_")
+        data_size.text = str(node.size)
+
+    # Add edges
+    for edge in edges:
+        edge_element = ET.SubElement(graph, "edge", source=edge.source, target=edge.target)
+        data_name = ET.SubElement(edge_element, "data", key="name")
+        data_name.text = edge.type
+        data_weight = ET.SubElement(edge_element, "data", key="weight")
+        data_weight.text = edge.weight
+
+    tree = ET.ElementTree(graphml)
+    tree.write(f"docs/graph_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.graphml", encoding="utf-8", xml_declaration=True)
+
+def create_dashscape_tree(nodes, edges):
+    '''
+    This function creates a dashscape tree from the nodes and edges.
+
+    Parameters:
+    nodes (list): The list of nodes.
+    edges (list): The list of edges.
+    '''
+    # Get major nodes as major-concepts or concepts
+    major_nodes = [n for n in nodes if n.type == "major-concept" or n.type == "concept"]
+    dashscape_major_nodes = [{'data': {'id': n.id, 'label': n.label}} for n in major_nodes]
+    major_node_ids = set([n.id for n in major_nodes])
+
+    # Get major edges as edges between major nodes
+    major_edges = [e for e in edges if e.source in major_node_ids and e.target in major_node_ids]
+    dashscape_major_edges = [{'data': {'source': e.source, 'target': e.target}} for e in major_edges]
+
+    # Get edges from major nodes to micro-concepts
+    edge_major_to_micro = [e for e in edges if e.source in major_node_ids and e.target not in major_node_ids]
+
+    # Create subgraphs
+    subgraphs = {}
+    for node_id in major_node_ids:
+        subgraph_nodes = set()
+        subgraphs[node_id] = {
+            'nodes': [],
+            'edges': []
+        }
+        for edge in edge_major_to_micro:
+            if edge.source == node_id:
+                subgraph_nodes.add(edge.target)
+                subgraphs[node_id]['nodes'].append({'data': {'id': edge.target, 'label': edge.target.split('__')[0].replace('_', ' ').capitalize()}})
+        subgraphs[node_id]['edges'] = [{'data': {'source': edge.source, 'target': edge.target}} for edge in edges if edge.source in subgraph_nodes and edge.target in subgraph_nodes]
+
+    with open(f'docs/graph_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
+        pickle.dump((dashscape_major_nodes, dashscape_major_edges, subgraphs), f)

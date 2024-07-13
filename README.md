@@ -4,7 +4,7 @@ This project aims to create knowledge graphs that for a given subject/field, lan
 
 ## Installation
 
-For creating knowledge graphs the following libraries are required:
+For creating knowledge graphs the following python libraries are required:
 - openai, numpy, tenacity
 For interactive hierarchical graphs you will need:
 - dash
@@ -28,19 +28,13 @@ GPT_MODEL= <your_gpt_model>
 
 ### Creating a knowledge graph
 
-To create a knowledge graph you have two options:
+To create a multi-level hierarchical knowledge graph you need to execute the following command:
 
-1. Single-level simple graph
-```bash
-python3 src/create_graph_v2.py
-```
-
-2. Multi-level hierarchical graph
 ```bash
 python3 src/create_graph.py
 ```
 
-The first options will create .graphml file that can be visualized using Gephi. The second option will also create a .pkl file that can be visualized using the interactive hierarchical graph.
+This will create a .graphml file that can be visualized by gephi and also a .pkl file that can be visualized using the interactive hierarchical graph.
 
 ### Visualizing the knowledge graph
 
@@ -57,9 +51,9 @@ python3 src/dash_scape.py -f <path_to_pkl_graph_file>
 
 A knowledge graph for the subject "Mathematics" in English at the "8th grade" level.
 
-[View the knowledge graph here](docs/third_graph.pdf)
+[View the knowledge graph here](docs/example_graph.pdf)
 
-![](docs/graph_video.gif)
+![](docs/example_graph.gif)
 
 
 

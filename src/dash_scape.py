@@ -28,7 +28,7 @@ app.layout = html.Div([
         style={'width': '100%', 'height': '400px', 'opacity': '1', 'transition': 'opacity 0.5s ease'},
         stylesheet=[
             {'selector': 'node', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px'}},
-            {'selector': 'edge', 'style': {'curve-style': 'bezier', 'width': '0.5px', 'opacity': '0.25', 'target-arrow-shape': 'triangle', 'arrow-scale': 0.3, 'target-arrow-color': '#000', 'line-color': '#000'}}
+            {'selector': 'edge', 'style': {'curve-style': 'bezier', 'width': '0.5px', 'opacity': '0.5', 'target-arrow-shape': 'triangle', 'arrow-scale': 0.5, 'target-arrow-color': '#000', 'line-color': '#000'}}
         ]
     ),
     dcc.Store(id='current-node', data='main'),
