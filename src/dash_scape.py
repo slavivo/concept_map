@@ -15,21 +15,20 @@ args = parser.parse_args()
 with open(args.file, 'rb') as f:
     main_nodes, main_edges, subgraphs = pickle.load(f)
 
+cyto.load_extra_layouts()
+
 app.layout = html.Div([
     html.Button("Back", id='back-button', n_clicks=0),
     cyto.Cytoscape(
         id='cytoscape',
         elements=main_nodes + main_edges,
         layout={
-            'name': 'cose',
-            'idealEdgeLength': 100,
-            'nodeOverlap': 10,
-            'nodeRepulsion': 80000,
+            'name': 'dagre',
         },
         style={'width': '100%', 'height': '400px', 'opacity': '1', 'transition': 'opacity 0.5s ease'},
         stylesheet=[
-            {'selector': 'node', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1'}},
-            {'selector': 'edge', 'style': {'curve-style': 'bezier', 'width': '0.5px', 'opacity': '0.3', 'target-arrow-shape': 'triangle', 'arrow-scale': 0.3, 'target-arrow-color': '#000', 'line-color': '#000'}}
+            {'selector': 'node', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px'}},
+            {'selector': 'edge', 'style': {'curve-style': 'bezier', 'width': '0.5px', 'opacity': '0.25', 'target-arrow-shape': 'triangle', 'arrow-scale': 0.3, 'target-arrow-color': '#000', 'line-color': '#000'}}
         ]
     ),
     dcc.Store(id='current-node', data='main'),
