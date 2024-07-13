@@ -4,6 +4,7 @@ import openai
 import concurrent.futures
 import logging
 from functools import partial
+from typing import List, Tuple, Optional
 from utils import (
     Node,
     Edge,
@@ -12,7 +13,6 @@ from utils import (
     RequestParams,
     chat_completion_request,
 )
-    
 
 # Read the config file
 config = configparser.ConfigParser()
@@ -26,7 +26,7 @@ client = openai.Client(api_key=OPENAI_KEY)
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-def parse_segment(segment, type_, size, parent) -> tuple:
+def parse_segment(segment: str, type_: str, size: int, parent: str) -> Tuple[Optional[Node], Optional[Edge]]:
     '''
     This function parses a segment of the output from the openAI model and returns either a node or an edge.
 
@@ -54,7 +54,7 @@ def parse_segment(segment, type_, size, parent) -> tuple:
     else:
         return None, None
 
-def parse_output(output, type_, parent='') -> tuple:
+def parse_output(output: str, type_: str, parent: str = '') -> Tuple[List[Node], List[Edge]]:
     '''
     This function parses the output from the openAI model and returns a list of nodes and a list of edges.
 
@@ -81,12 +81,14 @@ def parse_output(output, type_, parent='') -> tuple:
     for segment in output.strip().split(";"):
         if segment:
             node, edge = parse_segment(segment, type_, size, parent)
-            nodes.append(node) if node else None
-            edges.append(edge) if edge else None
+            if node:
+                nodes.append(node)
+            if edge:
+                edges.append(edge)
 
     return nodes, edges
 
-def add_edges(nodes, edges, source_node_id, target_type) -> list:
+def add_edges(nodes: List[Node], edges: List[Edge], source_node_id: str, target_type: str) -> List[Edge]:
     '''
     This function adds edges between the source node and the target nodes of the specified type.
 
@@ -104,12 +106,12 @@ def add_edges(nodes, edges, source_node_id, target_type) -> list:
             edges.append(Edge(source_node_id, node.id, "parent-child", "10"))
     return edges
 
-def process_message(concept, study_level, language) -> tuple:
+def process_message(concept: Node, study_level: str, language: str) -> Tuple[List[Node], List[Edge]]:
     '''
     This function processes a message from the openAI model and returns the nodes and edges.
 
     Parameters:
-    concept (tuple): The concept to process.
+    concept (Node): The concept to process.
     study_level (str): The study level.
     language (str): The output language.
 
@@ -137,7 +139,7 @@ def process_message(concept, study_level, language) -> tuple:
     edges_ = add_edges(nodes_, edges_, concept.id, "micro-concept")
     return nodes_, edges_
 
-def main():
+def main() -> None:
     '''
     This is the main function.
 
@@ -185,7 +187,7 @@ def main():
 
     process_message_partial = partial(process_message, study_level=study_level, language=language)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         results = executor.map(process_message_partial, concepts)
 
         for nodes_, edges_ in results:
