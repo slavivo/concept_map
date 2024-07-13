@@ -1,14 +1,16 @@
 # Concept Map
 
-This project aims to create knowledge graphs that for a given subject/field, language and level of study. The nodes are hierarchical - the subject, concepts and micro-concepts belonging to the various concepts. The edges between the same-level nodes dictate the order in which they should be learnt. The edges between different-level nodes dictate the parent-child relationship between the nodes.
+This project aims to create knowledge graphs that for a given subject/topic/concept, language and level of education. The nodes are hierarchical - the subject, concepts and micro-concepts belonging to the various concepts. The edges between the same-level nodes dictate the order in which they should be learnt. The edges between different-level nodes dictate the parent-child relationship between the nodes.
 
 ## Installation
 
 For creating knowledge graphs the following python libraries are required:
 - openai, numpy, tenacity
+
 For interactive hierarchical graphs you will need:
 - dash
-- dash-cytoscape
+- dash\-cytoscape
+
 For standard graph visualization you will need:
 - gephi
 
