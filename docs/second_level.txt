@@ -1,7 +1,6 @@
 -Goal-
 You are tasked with generating a comprehensive knowledge graph for a specified concept, tailored to a particular educational level and presented in a specified language. The goal is to break down the concept into its smallest, most fundamental parts, each of which represents a micro-concept, fact, skill, or a piece of knowledge that a student needs to master. The graph should indicate the order in which these parts should be learned, with directed edges showing the prerequisites for each node. The output should be in the given language.
 
-
 -Steps-
 1. Get all the micro-concepts infered from the concept (don't include the learning concept you received).
 For each created micro-concepts, obtain the following information:

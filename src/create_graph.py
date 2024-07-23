@@ -51,8 +51,7 @@ def parse_segment(segment: str, type_: str, size: int, parent: str) -> Tuple[Opt
             return Node(parts[1].lower().replace(" ", "_") + parent, parts[1], type_, size), None
         else:
             logging.info(f"Invalid node: {segment}")
-    else:
-        return None, None
+    return None, None
 
 def parse_output(output: str, type_: str, parent: str = '') -> Tuple[List[Node], List[Edge]]:
     '''
@@ -106,7 +105,7 @@ def add_edges(nodes: List[Node], edges: List[Edge], source_node_id: str, target_
             edges.append(Edge(source_node_id, node.id, "parent-child", "10"))
     return edges
 
-def process_message(concept: Node, study_level: str, language: str) -> Tuple[List[Node], List[Edge]]:
+def process_message(concept: Node, study_level: str, language: str, additional_instructions: str) -> Tuple[List[Node], List[Edge]]:
     '''
     This function processes a message from the openAI model and returns the nodes and edges.
 
@@ -114,15 +113,19 @@ def process_message(concept: Node, study_level: str, language: str) -> Tuple[Lis
     concept (Node): The concept to process.
     study_level (str): The study level.
     language (str): The output language.
+    additional_instructions (str): Additional instructions.
 
     Returns:
     tuple: A tuple containing the nodes and edges.
     '''
     logging.info(f"Processing message: {concept.label}")
     prompt = open("docs/second_level.txt", "r").read()
+    text = f"Educational level: {study_level}\nLanguage: {language}\nConcept: {concept.label}"
+    if additional_instructions:
+        text += f"\nAdditional instructions: {additional_instructions}"
     messages = [
         {"role": "system", "content": prompt},
-        {"role": "user", "content": f"Concept level: {study_level}\nLanguage: {language}\nConcept: {concept.label}"},
+        {"role": "user", "content": text},
     ]
     params = RequestParams(
         client,
@@ -148,6 +151,8 @@ def main() -> None:
     subject = input("Enter subject/concept/topic: ")
     study_level = input("Enter education level: ")
     language = input("Enter output language: ")
+    additional_instructions = input("Enter additional instructions for construction of first-level concepts: ")
+    micro_additional_instructions = input("Enter additional instructions for construction of second-level concepts: ")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true")
@@ -158,7 +163,10 @@ def main() -> None:
 
     # First level
     prompt = open("docs/first_level.txt", "r").read()
-    messages = [{"role": "system", "content": prompt}, {"role": "user", "content": f"Study level: {study_level}\nLanguage: {language}\nSubject: {subject}"}]
+    text = f"Educational level: {study_level}\nLanguage: {language}\nSubject: {subject}"
+    if additional_instructions:
+        text += f"\nAdditional instructions: {additional_instructions}"
+    messages = [{"role": "system", "content": prompt}, {"role": "user", "content": text}]
     params = RequestParams(
         client,
         messages=messages,
@@ -185,7 +193,7 @@ def main() -> None:
     prompt = open("docs/second_level.txt", "r").read()
     concepts = [n for n in nodes if n.type == "concept"]
 
-    process_message_partial = partial(process_message, study_level=study_level, language=language)
+    process_message_partial = partial(process_message, study_level=study_level, language=language, additional_instructions=micro_additional_instructions)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         results = executor.map(process_message_partial, concepts)

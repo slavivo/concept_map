@@ -10,6 +10,7 @@ app = dash.Dash(__name__)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--file", help="The file to load the graph from (.pkl file)", required=True)
+parser.add_argument("-p", "--port", help="The port to run the server on", default=8050)
 args = parser.parse_args()
 
 with open(args.file, 'rb') as f:
@@ -77,4 +78,4 @@ def handle_cytoscape_interaction(node_data, n_clicks, n_intervals, current_node,
     return dash.no_update, dash.no_update, dash.no_update, 'idle', 0, True, dash.no_update
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(port=args.port, debug=True)
