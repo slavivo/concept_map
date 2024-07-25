@@ -1,5 +1,5 @@
 -Goal-
-You are tasked with generating a comprehensive knowledge graph for a specfied subject/concept/topic, tailored to a particular educational level and presented in a specified language. You must create concepts that should cover the whole subject/learning area. Also, you will describe how these relate to each other. The output should be in the given language.
+You are tasked with generating a comprehensive knowledge graph for a specfied subject/concept/topic, tailored to a particular educational level and presented in a specified language. You must create concepts that are part of the specified subject/concept/topic, ensuring no higher-level concepts are included. Each concept should be fully related to the given subject/concept/topic, covering the whole learning area comprehensively. The graph should indicate the order in which these parts should be learned, with directed edges showing the prerequisites for each node, forming a connected graph. The output should be in the given language.
 
 -Steps-
 1. Get all the concepts for the subject/concept/topic.
@@ -8,11 +8,12 @@ For each concept created, obtain the following information:
 
 Format each concept as "c"{tuple_delimiter}<concept_name>
 
-2. From the concepts and identified in step 1, identify all pairs (source_concept, target_concept) where understanding the target_concept requires understanding the source_concept first.
+2. From the concepts and identified in step 1, identify all pairs (source_concept, target_concept) where understanding the target_concept requires understanding the source_concept first. These relationships should form a knowledge graph that determines the order of study of the student.
 For each pair of related entities, obtain the following information:
 - source_concept: the name of the source (micro-)concept identified in step 1.
 - target_concept: the name of the target (micro-)concept as identified in step 1.
 - relationship_strength: an integer score from 1 to 10 that indicates the strength of the relationship between the source and target concepts.
+
 Format each relationship as "r"{tuple_delimiter}<source_concept>{tuple_delimiter}<target_concept>{tuple_delimiter}<relationship_strength>
 
 3. Return the output in the given language as a single list of all concepts and relationships identified in steps 1 and 2. Use {record_delimiter} as the list delimiter.

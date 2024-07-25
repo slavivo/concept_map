@@ -126,6 +126,12 @@ class Node:
             'type': self.type,
             'size': self.size
         }
+    
+    def __str__(self):
+        return f'Node: {self.id}'
+    
+    def __repr__(self):
+        return self.__str__()
 
 
 class Edge:
@@ -142,6 +148,12 @@ class Edge:
             'type': self.type,
             'weight': self.weight
         }
+    
+    def __str__(self):
+        return f'Edge: {self.source} -> {self.target}'
+    
+    def __repr__(self):
+        return self.__str__()
 
 
 def create_graphml_tree(nodes, edges):

@@ -105,12 +105,14 @@ def add_edges(nodes: List[Node], edges: List[Edge], source_node_id: str, target_
             edges.append(Edge(source_node_id, node.id, "parent-child", "10"))
     return edges
 
-def process_message(concept: Node, study_level: str, language: str, additional_instructions: str) -> Tuple[List[Node], List[Edge]]:
+def process_message(concept_idx: int, concepts: list[Node], subject: str, study_level: str, language: str, additional_instructions: str) -> Tuple[List[Node], List[Edge]]:
     '''
     This function processes a message from the openAI model and returns the nodes and edges.
 
     Parameters:
-    concept (Node): The concept to process.
+    concept_idx (int): The index of the concept to process.
+    concepts (Node): The list of concepts.
+    subject (str): The subject.
     study_level (str): The study level.
     language (str): The output language.
     additional_instructions (str): Additional instructions.
@@ -118,15 +120,19 @@ def process_message(concept: Node, study_level: str, language: str, additional_i
     Returns:
     tuple: A tuple containing the nodes and edges.
     '''
+    concept = concepts[concept_idx]
+    not_included_concepts = concepts[:concept_idx] + concepts[concept_idx + 1:]
+    not_included_concepts = [c.label for c in not_included_concepts]
     logging.info(f"Processing message: {concept.label}")
     prompt = open("docs/second_level.txt", "r").read()
-    text = f"Educational level: {study_level}\nLanguage: {language}\nConcept: {concept.label}"
+    text = f"Given concept: {subject} - {concept.label}\nEducational level: {study_level}\nOutput language: {language}\nConcepts to not be included: {', '.join(not_included_concepts)}"
     if additional_instructions:
         text += f"\nAdditional instructions: {additional_instructions}"
     messages = [
         {"role": "system", "content": prompt},
         {"role": "user", "content": text},
     ]
+    logging.debug(f"Processing second-level user message: {text}")
     params = RequestParams(
         client,
         messages=messages,
@@ -163,7 +169,7 @@ def main() -> None:
 
     # First level
     prompt = open("docs/first_level.txt", "r").read()
-    text = f"Educational level: {study_level}\nLanguage: {language}\nSubject: {subject}"
+    text = f"Subject: {subject}\nEducational level: {study_level}\nOutput language: {language}"
     if additional_instructions:
         text += f"\nAdditional instructions: {additional_instructions}"
     messages = [{"role": "system", "content": prompt}, {"role": "user", "content": text}]
@@ -193,10 +199,10 @@ def main() -> None:
     prompt = open("docs/second_level.txt", "r").read()
     concepts = [n for n in nodes if n.type == "concept"]
 
-    process_message_partial = partial(process_message, study_level=study_level, language=language, additional_instructions=micro_additional_instructions)
+    process_message_partial = partial(process_message, concepts=concepts, subject=subject, study_level=study_level, language=language, additional_instructions=micro_additional_instructions)
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        results = executor.map(process_message_partial, concepts)
+        results = executor.map(process_message_partial, range(len(concepts)))
 
         for nodes_, edges_ in results:
             nodes.extend(nodes_)
