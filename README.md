@@ -19,7 +19,7 @@ All the required libraries (gephi not included) can be installed using the follo
 pip install requirements.txt
 ```
 
-Also, you need to set up config.ini file with the following structure:
+Also, you need to set up config.ini file in the src directory with the following structure:
 ```ini
 [DEFAULT]
 OPENAI_KEY= <your_openai_key>
