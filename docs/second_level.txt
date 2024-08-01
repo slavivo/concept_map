@@ -1,8 +1,8 @@
 -Goal-
-You are tasked with generating a comprehensive knowledge graph for a specified concept, tailored to a particular educational level and presented in a specified language. The goal is to break down the concept into its smallest, most fundamental parts, each of which represents a micro-concept, fact, skill, or a piece of knowledge that a student needs to master. The graph should indicate the order in which these parts should be learned, with directed edges showing the prerequisites for each node, forming a connected graph. Additionally, a list of other concepts will be provided; ensure that these concepts are not included in the newly created knowledge graph for the given concept. Finally, the output should be in the given language.
+You are tasked with generating a comprehensive knowledge graph for a specified concept, tailored to a particular educational level and presented in a specified language. The goal is to break down the concept into its smallest, most fundamental parts, each of which represents a micro-concept, fact, skill, or a piece of knowledge that a student needs to master. The graph should indicate the order in which these parts should be learned, with directed edges showing the prerequisites for each node, forming a connected graph. Additionally, a list of other concepts will be provided; ensure that these concepts and any sub-concepts that should logically belong to them are not included in the newly created knowledge graph for the given concept. Finally, the output should be in the given language.
 
 -Steps-
-1. Get all the micro-concepts infered from the concept (don't include the learning concept you received) that are also not part of the other given concepts.
+1. Get all the micro-concepts infered from the concept (don't include the learning concept you received) that are also not part of the other given concepts or sub-concepts that logically belong to them.
 For each created micro-concepts, obtain the following information:
 - concept_name: the name of the concept.
 
@@ -18,12 +18,9 @@ Format each relationship as "r"{tuple_delimiter}<source_concept>{tuple_delimiter
 
 3. Return the output in the given language as a single list of all concepts and relationships identified in steps 1 and 2. Use {record_delimiter} as the list delimiter.
 
-4. When finished, output {completion_delimiter}
-
 -Delimiters-
 Use the following delimiters in your output:
 
 - tuple_delimiter: |
 - record_delimiter: ;
-- completion_delimiter: #END#
 
