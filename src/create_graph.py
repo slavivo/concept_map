@@ -87,22 +87,22 @@ def parse_output(output: str, type_: str, parent: str = '') -> Tuple[List[Node],
 
     return nodes, edges
 
-def add_edges(nodes: List[Node], edges: List[Edge], source_node_id: str, target_type: str) -> List[Edge]:
+def add_edges(nodes: List[Node], edges: List[Edge], target_node_id: str, source_type: str) -> List[Edge]:
     '''
     This function adds edges between the source node and the target nodes of the specified type.
 
     Parameters:
     nodes (list): The list of nodes.
     edges (list): The list of edges.
-    source_node_id (str): The source node id.
-    target_type (str): The target node type.
+    target_node_id (str): The target node id.
+    source_type (str): The source nodes type.
 
     Returns:
     list: The list of edges.
     '''
     for node in nodes:
-        if node.type == target_type:
-            edges.append(Edge(source_node_id, node.id, "parent-child", "10"))
+        if node.type == source_type:
+            edges.append(Edge(node.id, target_node_id, "parent-child", "10"))
     return edges
 
 def process_message(concept_idx: int, concepts: list[Node], subject: str, study_level: str, language: str, additional_instructions: str) -> Tuple[List[Node], List[Edge]]:

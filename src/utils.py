@@ -229,31 +229,47 @@ def create_dashscape_tree(nodes, edges):
     nodes (list): The list of nodes.
     edges (list): The list of edges.
     '''
-    # Get major nodes as major-concepts or concepts
-    major_nodes = [n for n in nodes if n.type == "major-concept" or n.type == "concept"]
-    dashscape_major_nodes = [{'data': {'id': n.id, 'label': n.label}} for n in major_nodes]
-    major_node_ids = set([n.id for n in major_nodes])
+    # Get the major node
+    major_node = None
+    for node in nodes:
+        if node.type == "major-concept":
+            major_node = node
+            break
+    dashscape_major_node = {'data': {'id': major_node.id, 'label': major_node.label}}
 
-    # Get major edges as edges between major nodes
-    major_edges = [e for e in edges if e.source in major_node_ids and e.target in major_node_ids]
-    dashscape_major_edges = [{'data': {'source': e.source, 'target': e.target}} for e in major_edges]
+    # Create the graph
+    graph = {}
+    graph[major_node.id] = {'nodes': [], 'edges': []}
 
-    # Get edges from major nodes to micro-concepts
-    edge_major_to_micro = [e for e in edges if e.source in major_node_ids and e.target not in major_node_ids]
+    # Get nodes as concepts
+    nodes = [n for n in nodes if n.type == "concept"]
+    graph[major_node.id]['nodes'] = [{'data': {'id': n.id, 'label': n.label}} for n in nodes]
+    node_ids = set([n.id for n in nodes])
+
+    # Get edges between normal nodes
+    major_edges = [e for e in edges if e.source in node_ids and e.target in node_ids]
+    graph[major_node.id]['edges'] = [{'data': {'source': e.source, 'target': e.target}} for e in major_edges]
+
+    # Get edges from normal nodes to micro nodes
+    edge_major_to_micro = [e for e in edges if e.target in node_ids and e.source not in node_ids]
 
     # Create subgraphs
     subgraphs = {}
-    for node_id in major_node_ids:
+    for node_id in node_ids:
         subgraph_nodes = set()
         subgraphs[node_id] = {
             'nodes': [],
             'edges': []
         }
         for edge in edge_major_to_micro:
-            if edge.source == node_id:
-                subgraph_nodes.add(edge.target)
-                subgraphs[node_id]['nodes'].append({'data': {'id': edge.target, 'label': edge.target.split('__')[0].replace('_', ' ').capitalize()}})
+            if edge.target == node_id:
+                subgraph_nodes.add(edge.source)
+                subgraphs[node_id]['nodes'].append({'data': {'id': edge.source, 'label': edge.source.split('__')[0].replace('_', ' ').capitalize()}})
         subgraphs[node_id]['edges'] = [{'data': {'source': edge.source, 'target': edge.target}} for edge in edges if edge.source in subgraph_nodes and edge.target in subgraph_nodes]
 
+    print(f"Major node: {dashscape_major_node}")
+    print(f"Graph: {graph}")
+    print(f"Subgraphs: {subgraphs}")
+
     with open(f'docs/graph_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
-        pickle.dump((dashscape_major_nodes, dashscape_major_edges, subgraphs), f)
+        pickle.dump(([dashscape_major_node], graph, subgraphs), f)
