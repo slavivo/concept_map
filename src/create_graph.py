@@ -105,17 +105,18 @@ def add_edges(nodes: List[Node], edges: List[Edge], target_node_id: str, source_
             edges.append(Edge(node.id, target_node_id, "parent-child", "10"))
     return edges
 
-def process_message(concept_idx: int, concepts: list[Node], subject: str, study_level: str, language: str, additional_instructions: str) -> Tuple[List[Node], List[Edge]]:
+def process_message(concept_idx: int, concepts: list, subject: str, study_level: str, language: str, additional_instructions: str, add_parent_edges: bool = True) -> Tuple[List[Node], List[Edge]]:
     '''
     This function processes a message from the openAI model and returns the nodes and edges.
 
     Parameters:
     concept_idx (int): The index of the concept to process.
-    concepts (Node): The list of concepts.
+    concepts: The list of concepts.
     subject (str): The subject.
     study_level (str): The study level.
     language (str): The output language.
     additional_instructions (str): Additional instructions.
+    add_parent_edges (bool): Whether to add parent edges.
 
     Returns:
     tuple: A tuple containing the nodes and edges.
@@ -145,7 +146,8 @@ def process_message(concept_idx: int, concepts: list[Node], subject: str, study_
 
     response = response.choices[0].message.content.replace("\n", "")
     nodes_, edges_ = parse_output(response, "micro-concept", concept.id)
-    edges_ = add_edges(nodes_, edges_, concept.id, "micro-concept")
+    if add_parent_edges:
+        edges_ = add_edges(nodes_, edges_, concept.id, "micro-concept")
     return nodes_, edges_
 
 def main() -> None:
@@ -213,7 +215,7 @@ def main() -> None:
 
     # Create .graphml and dashscape tree
     if not args.nooutput:
-        create_dashscape_tree(nodes, edges)
+        create_dashscape_tree(nodes, edges, study_level, language)
         create_graphml_tree(nodes, edges)
 
 if __name__ == "__main__":

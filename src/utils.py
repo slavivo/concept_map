@@ -221,13 +221,15 @@ def create_graphml_tree(nodes, edges):
     tree = ET.ElementTree(graphml)
     tree.write(f"docs/graph_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.graphml", encoding="utf-8", xml_declaration=True)
 
-def create_dashscape_tree(nodes, edges):
+def create_dashscape_tree(nodes, edges, study_level, language):
     '''
     This function creates a dashscape tree from the nodes and edges.
 
     Parameters:
     nodes (list): The list of nodes.
     edges (list): The list of edges.
+    study_level (str): The study level.
+    language (str): The output language.
     '''
     # Get the major node
     major_node = None
@@ -235,7 +237,7 @@ def create_dashscape_tree(nodes, edges):
         if node.type == "major-concept":
             major_node = node
             break
-    dashscape_major_node = {'data': {'id': major_node.id, 'label': major_node.label}}
+    dashscape_major_node = {'data': {'id': major_node.id, 'label': major_node.label, 'study_level': study_level, 'language': language}}
 
     # Create the graph
     graph = {}
@@ -266,10 +268,6 @@ def create_dashscape_tree(nodes, edges):
                 subgraph_nodes.add(edge.source)
                 subgraphs[node_id]['nodes'].append({'data': {'id': edge.source, 'label': edge.source.split('__')[0].replace('_', ' ').capitalize()}})
         subgraphs[node_id]['edges'] = [{'data': {'source': edge.source, 'target': edge.target}} for edge in edges if edge.source in subgraph_nodes and edge.target in subgraph_nodes]
-
-    print(f"Major node: {dashscape_major_node}")
-    print(f"Graph: {graph}")
-    print(f"Subgraphs: {subgraphs}")
 
     with open(f'docs/graph_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
         pickle.dump(([dashscape_major_node], graph, subgraphs), f)
