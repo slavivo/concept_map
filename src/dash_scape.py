@@ -44,6 +44,35 @@ app.layout = html.Div([
     dcc.Interval(id='transition-interval', interval=100, n_intervals=0, max_intervals=10, disabled=True)
 ])
 
+def regenerate_subgraph(current_view, current_major):
+    # Get the index of the current concept (subgraph)
+    for i, c in enumerate(concepts):
+        if c.id == current_view['parent']:
+            index = i
+            break
+
+    # Generate the subgraph
+    nodes, edges = create_graph.process_message(
+        index, 
+        concepts, 
+        current_major['label'], 
+        current_major['study_level'], 
+        current_major['language'], 
+        "", 
+        False
+    )
+
+    # Update the subgraphs
+    subgraphs[current_view['parent']] = {
+        'nodes': [{'data': {'id': n.id, 'label': n.label}} for n in nodes], 
+        'edges': [{'data': {'source': e.source, 'target': e.target}} for e in edges]
+    }
+
+    # Get the new elements
+    new_elements = subgraphs[current_view['parent']]['nodes'] + subgraphs[current_view['parent']]['edges']
+    return dash.no_update, {'width': '100%', 'height': '400px', 'opacity': '0', 'transition': 'opacity 0.5s ease'}, dash.no_update, dash.no_update, 'fade-out', 0, False, new_elements
+
+
 @app.callback(
     [Output('cytoscape', 'elements'),
      Output('cytoscape', 'style'),
@@ -68,14 +97,7 @@ def handle_cytoscape_interaction(node_data, back_clicks, regen_clicks, n_interva
 
     if trigger == 'regenerate-button':
         if current_view['level'] == 'micro':
-            for i, c in enumerate(concepts):
-                if c.id == current_view['parent']:
-                    index = i
-                    break
-            nodes, edges = create_graph.process_message(index, concepts, current_major['label'], current_major['study_level'], current_major['language'], "", False)
-            subgraphs[current_view['parent']] = {'nodes': [{'data': {'id': n.id, 'label': n.label}} for n in nodes], 'edges': [{'data': {'source': e.source, 'target': e.target}} for e in edges]}
-            new_elements = subgraphs[current_view['parent']]['nodes'] + subgraphs[current_view['parent']]['edges']
-            return dash.no_update, {'width': '100%', 'height': '400px', 'opacity': '0', 'transition': 'opacity 0.5s ease'}, dash.no_update, dash.no_update, 'fade-out', 0, False, new_elements
+            return regenerate_subgraph(current_view, current_major)
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 0, True, dash.no_update
 
     if trigger == 'transition-interval':
@@ -87,7 +109,7 @@ def handle_cytoscape_interaction(node_data, back_clicks, regen_clicks, n_interva
                 return dash.no_update, {'width': '100%', 'height': '400px', 'opacity': '1', 'transition': 'opacity 0.5s ease'}, dash.no_update, dash.no_update, 'idle', 0, True, dash.no_update
         return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, n_intervals + 1, False, dash.no_update
 
-    if trigger == 'back-button' and current_view['level'] != 'major':
+    elif trigger == 'back-button' and current_view['level'] != 'major':
         if current_view['level'] == 'standard':
             new_elements = major_node
             next_view = {'level': 'major', 'parent': ''}
@@ -95,19 +117,20 @@ def handle_cytoscape_interaction(node_data, back_clicks, regen_clicks, n_interva
             new_elements = graph[current_major['id']]
             next_view = {'level': 'standard', 'parent': ''}
         return dash.no_update, {'width': '100%', 'height': '400px', 'opacity': '0', 'transition': 'opacity 0.5s ease'}, next_view, dash.no_update, 'fade-out', 0, False, new_elements
+    
     elif trigger == 'cytoscape' and node_data:
-        new_node = node_data['id']
+        node_id = node_data['id']
 
         if current_view['level'] == 'major':
             next_view = {'level': 'standard', 'parent': node_data['id']}
         else:
             next_view = {'level': 'micro', 'parent': node_data['id']}
 
-        if new_node in graph:
-            new_elements = graph[new_node]
+        if node_id in graph:
+            new_elements = graph[node_id]
             return dash.no_update, {'width': '100%', 'height': '400px', 'opacity': '0', 'transition': 'opacity 0.5s ease'}, next_view, node_data, 'fade-out', 0, False, new_elements
-        elif new_node in subgraphs:
-            new_elements = subgraphs[new_node]['nodes'] + subgraphs[new_node]['edges']
+        elif node_id in subgraphs:
+            new_elements = subgraphs[node_id]['nodes'] + subgraphs[node_id]['edges']
             return dash.no_update, {'width': '100%', 'height': '400px', 'opacity': '0', 'transition': 'opacity 0.5s ease'}, next_view, dash.no_update, 'fade-out', 0, False, new_elements
     return dash.no_update, dash.no_update, dash.no_update, dash.no_update, 'idle', 0, True, dash.no_update
 

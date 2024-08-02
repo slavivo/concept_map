@@ -63,7 +63,7 @@ class RequestParams:
         }
 
 
-@retry(wait=wait_random_exponential(multiplier=5, max=200), stop=stop_after_attempt(5))
+@retry(wait=wait_random_exponential(multiplier=2, max=60), stop=stop_after_attempt(5))
 def chat_completion_request(
     params: RequestParams,
 ) -> openai.types.chat.chat_completion.ChatCompletion:

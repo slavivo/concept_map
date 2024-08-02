@@ -142,9 +142,16 @@ def process_message(concept_idx: int, concepts: list, subject: str, study_level:
         temperature=0.2,
         top_p=0.1,
     )
-    response = chat_completion_request(params)
 
-    response = response.choices[0].message.content.replace("\n", "")
+    while True:
+        response = chat_completion_request(params)
+        response = response.choices[0].message.content
+        if response.endswith("#END#"):
+            response = response[:-5]
+            break
+        logging.info("Second level response overflowed the token limit, retrying...")
+
+    response = response.replace("\n", "")
     nodes_, edges_ = parse_output(response, "micro-concept", concept.id)
     if add_parent_edges:
         edges_ = add_edges(nodes_, edges_, concept.id, "micro-concept")
@@ -183,8 +190,16 @@ def main() -> None:
         temperature=0.2,
         top_p=0.1,
     )
-    response = chat_completion_request(params)
-    response = response.choices[0].message.content.replace("\n", "")
+
+    while True:
+        response = chat_completion_request(params)
+        response = response.choices[0].message.content
+        if response.endswith("#END#"):
+            response = response[:-5]
+            break
+        logging.info("First level response overflowed the token limit, retrying...")
+
+    response = response.replace("\n", "")
 
     # Parse the output and add the major node
     nodes, edges = parse_output(response, "concept", f'{study_level} {subject}')
