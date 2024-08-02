@@ -24,6 +24,7 @@ cyto.load_extra_layouts()
 app.layout = html.Div([
     html.Button("Back", id='back-button', n_clicks=0),
     html.Button("Regenerate current subgraph", id='regenerate-button', n_clicks=0),
+    html.Button("Save graph", id='save-button', n_clicks=0),
     html.Div(id="dynamic-input-area"),
     cyto.Cytoscape(
         id='cytoscape',
@@ -85,15 +86,21 @@ def regenerate_subgraph(current_view, current_major):
     [Input('cytoscape', 'tapNodeData'),
      Input('back-button', 'n_clicks'),
      Input('regenerate-button', 'n_clicks'),
+     Input('save-button', 'n_clicks'),
      Input('transition-interval', 'n_intervals')],
     [State('current-view', 'data'),
      State('current-major', 'data'),
      State('next-elements', 'data'),
      State('transition-phase', 'data')]
 )
-def handle_cytoscape_interaction(node_data, back_clicks, regen_clicks, n_intervals, current_view, current_major, next_elements, transition_phase):
+def handle_cytoscape_interaction(node_data, back_clicks, regen_clicks, save_clicks, n_intervals, current_view, current_major, next_elements, transition_phase):
     ctx = dash.callback_context
     trigger = ctx.triggered[0]['prop_id'].split('.')[0]
+
+    if trigger == 'save-button':
+        with open(args.file, 'wb') as f:
+            pickle.dump((major_node, graph, subgraphs), f)
+        return dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, 0, True, dash.no_update
 
     if trigger == 'regenerate-button':
         if current_view['level'] == 'micro':
