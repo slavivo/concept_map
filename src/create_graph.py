@@ -3,6 +3,7 @@ import argparse
 import openai
 import concurrent.futures
 import logging
+import pandas as pd
 from functools import partial
 from typing import List, Tuple, Optional
 from utils import (
@@ -157,6 +158,64 @@ def process_message(concept_idx: int, concepts: list, subject: str, study_level:
         edges_ = add_edges(nodes_, edges_, concept.id, "micro-concept")
     return nodes_, edges_
 
+def add_requirements(language: str, requirements_path: str, nodes: List[Node]) -> List[Node]:
+    '''
+    This function adds grade requirements to the nodes.
+
+    Parameters:
+    language (str): The output language.
+    requirements_path (str): The path to the csv requirements file.
+    nodes (list): The list of nodes.
+
+    Returns:
+    list: The list of nodes.
+    '''
+    node_labels = [n.label for n in nodes if n.type == "micro-concept"]
+    prompt = open("docs/grade_requirements.txt", "r").read()
+    curr_outcomes = pd.read_csv(requirements_path, dtype=str)
+    # get the doporucena_trida and vystup columns as tuple
+    curr_outcomes = curr_outcomes[['doporucena_trida', 'vystup']].apply(tuple, axis=1).tolist()
+
+    grade_content = {}
+    for grade, content in curr_outcomes:
+        if grade not in grade_content:
+            grade_content[grade] = []
+        grade_content[grade].append(content)
+
+    text = f"""Language: {language}\n\nConcepts: {node_labels}\n\nCurriculum outcomes: {grade_content}"""
+
+    messages = [
+        {"role": "system", "content": prompt},
+        {"role": "user", "content": text},
+    ]
+
+    params = RequestParams(
+        client,
+        messages=messages,
+        model=GPT_MODEL,
+        max_tokens=4096,
+        temperature=0.2,
+        top_p=0.1,
+    )
+
+    response = chat_completion_request(params)
+    response = response.choices[0].message.content
+
+    lines = response.split('\n')
+    i = 0
+    for node in nodes:
+        if node.type != "micro-concept":
+            continue
+        line = lines[i]
+        i += 1
+        label, req = line.split(': ')
+        if label == node.label:
+            node.requirement = req
+        else:
+            logging.info(f"Label mismatch: {label} != {node.label}")
+
+    return nodes
+
 def main() -> None:
     '''
     This is the main function.
@@ -166,6 +225,7 @@ def main() -> None:
     subject = input("Enter subject/concept/topic: ")
     study_level = input("Enter education level: ")
     language = input("Enter output language: ")
+    requirements_path = input("Enter the path to a csv file containing mandatory curriculum (optional): ")
     additional_instructions = input("Enter additional instructions for construction of first-level concepts: ")
     micro_additional_instructions = input("Enter additional instructions for construction of second-level concepts: ")
 
@@ -227,6 +287,10 @@ def main() -> None:
 
     logging.debug(f"Second level nodes: {nodes}\n")
     logging.debug(f"Second level edges: {edges}\n")
+
+    # Add grade requirements
+    if requirements_path:
+        nodes = add_requirements(language, requirements_path, nodes)
 
     # Create .graphml and dashscape tree
     if not args.nooutput:

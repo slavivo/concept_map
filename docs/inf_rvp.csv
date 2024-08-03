@@ -1,0 +1,36 @@
+doporucena_trida,predmet,vystup
+6.,INF,"získá z dat informace, interpretuje data, odhaluje chyby v cizích interpretacích dat"
+6.,INF,navrhuje a porovnává různé způsoby kódování dat s cílem jejich uložení a přenosu
+6.,INF,"po přečtení jednotlivých kroků algoritmu nebo programu vysvětlí celý postup; určí problém, který je daným algoritmem řešen"
+6.,INF,"vybere z více možností vhodný algoritmus pro řešený problém a svůj výběr zdůvodní; upraví daný algoritmus pro jiné problémy, navrhne různé algoritmy pro řešení problému"
+6.,INF,"v blokově orientovaném programovacím jazyce vytvoří přehledný program s ohledem na jeho možné důsledky a svou odpovědnost za ně; program vyzkouší a opraví v něm případné chyby; používá opakování, větvení programu, proměnné"
+6.,INF,"ověří správnost postupu, najde a opraví v něm případnou chybu"
+6.,INF,"vysvětlí účel informačních systémů, které používá, identifikuje jejich jednotlivé prvky a vztahy mezi nimi; zvažuje možná rizika při navrhování i užívání informačních systémů"
+6.,INF,"sám evidenci vyzkouší a následně zhodnotí její funkčnost, případně navrhne její úpravu"
+7.,INF,"vymezí problém a určí, jaké informace bude potřebovat k jeho řešení; situaci modeluje pomocí grafů, případně obdobných schémat; porovná svůj navržený model s jinými modely k řešení stejného problému a vybere vhodnější, svou volbu zdůvodní"
+7.,INF,"zhodnotí, zda jsou v modelu všechna data potřebná k řešení problému; vyhledá chybu v modelu a opraví ji"
+7.,INF,"po přečtení jednotlivých kroků algoritmu nebo programu vysvětlí celý postup; určí problém, který je daným algoritmem řešen"
+7.,INF,"vybere z více možností vhodný algoritmus pro řešený problém a svůj výběr zdůvodní; upraví daný algoritmus pro jiné problémy, navrhne různé algoritmy pro řešení problému"
+7.,INF,"v blokově orientovaném programovacím jazyce vytvoří přehledný program s ohledem na jeho možné důsledky a svou odpovědnost za ně; program vyzkouší a opraví v něm případné chyby; používá opakování, větvení programu, proměnné"
+7.,INF,"ověří správnost postupu, najde a opraví v něm případnou chybu"
+7.,INF,ukládá a spravuje svá data ve vhodném formátu s ohledem na jejich další zpracování či přenos
+7.,INF,vybírá nejvhodnější způsob připojení digitálních zařízení do počítačové sítě; uvede příklady sítí a popíše jejich charakteristické znaky
+7.,INF,poradí si s typickými závadami a chybovými stavy počítače
+7.,INF,"dokáže usměrnit svoji činnost tak, aby minimalizoval riziko ztráty či zneužití dat; popíše fungování a diskutuje omezení zabezpečovacích řešení"
+8.,INF,rozdělí problém na jednotlivě řešitelné části a navrhne a popíše kroky k jejich řešení
+8.,INF,"vybere z více možností vhodný algoritmus pro řešený problém a svůj výběr zdůvodní; upraví daný algoritmus pro jiné problémy, navrhne různé algoritmy pro řešení problému"
+8.,INF,"v blokově orientovaném programovacím jazyce vytvoří přehledný program s ohledem na jeho možné důsledky a svou odpovědnost za ně; program vyzkouší a opraví v něm případné chyby; používá opakování, větvení programu, proměnné"
+8.,INF,"ověří správnost postupu, najde a opraví v něm případnou chybu"
+8.,INF,"v blokově orientovaném programovacím jazyce vytvoří přehledný program s ohledem na jeho možné důsledky a svou odpovědnost za ně; program vyzkouší a opraví v něm případné chyby; používá opakování, větvení programu, proměnné"
+8.,INF,"ověří správnost postupu, najde a opraví v něm případnou chybu"
+8.,INF,"nastavuje zobrazení, řazení a filtrování dat v tabulce, aby mohl odpovědět na položenou otázku; využívá funkce pro automatizaci zpracování dat"
+8.,INF,"vymezí problém a určí, jak při jeho řešení využije evidenci dat; na základě doporučeného i vlastního návrhu sestaví tabulku pro evidenci dat a nastaví pravidla a postupy pro práci se záznamy v evidenci dat"
+9.,INF,rozdělí problém na jednotlivě řešitelné části a navrhne a popíše kroky k jejich řešení
+9.,INF,"vybere z více možností vhodný algoritmus pro řešený problém a svůj výběr zdůvodní; upraví daný algoritmus pro jiné problémy, navrhne různé algoritmy pro řešení problému"
+9.,INF,"v blokově orientovaném programovacím jazyce vytvoří přehledný program s ohledem na jeho možné důsledky a svou odpovědnost za ně; program vyzkouší a opraví v něm případné chyby; používá opakování, větvení programu, proměnné"
+9.,INF,"ověří správnost postupu, najde a opraví v něm případnou chybu"
+9.,INF,"popíše, jak funguje počítač po stránce hardwaru i operačního systému; diskutuje o fungování digitálních technologií určujících trendy ve světě"
+9.,INF,ukládá a spravuje svá data ve vhodném formátu s ohledem na jejich další zpracování či přenos
+9.,INF,vybírá nejvhodnější způsob připojení digitálních zařízení do počítačové sítě; uvede příklady sítí a popíše jejich charakteristické znaky
+9.,INF,poradí si s typickými závadami a chybovými stavy počítače
+9.,INF,"dokáže usměrnit svoji činnost tak, aby minimalizoval riziko ztráty či zneužití dat; popíše fungování a diskutuje omezení zabezpečovacích řešení"

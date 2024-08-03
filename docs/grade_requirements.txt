@@ -1,0 +1,15 @@
+-Goal-
+Your goal is to determine the appropriate grade for learning each concept from a given list, based on a separate JSON object specifying mandatory curriculum content by grade. If a concept is not at all related to any of the curriculum outcomes, classify it as "o" for being optional. 
+
+-Input-
+Language: Specify the language of both the input and the output.
+Concepts: A list containing labels for various concepts.
+Curriculum outputs: A JSON object where the key is the grade and the value is a list of content items that should be learned at that grade.
+
+-Steps-
+For each concept in the Concepts list, determine the corresponding grade level by matching it with the content in the Mandatory Learning JSON.
+If the concept is not found in the Mandatory Learning JSON, classify it as "o"
+
+-Output-
+Format the output for each concept as follows, don't add anything else:
+<concept_label>: <recommended_grade>\n

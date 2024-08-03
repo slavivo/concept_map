@@ -113,11 +113,12 @@ def print_logprobs(logprobs):
 
 
 class Node:
-    def __init__(self, id_, label, type_, size):
+    def __init__(self, id_, label, type_, size, requirement=''):
         self.id = id_
         self.label = label
         self.type = type_
         self.size = size
+        self.requirement = requirement
 
     def to_dict(self):
         return {
@@ -188,6 +189,12 @@ def create_graphml_tree(nodes, edges):
     ET.SubElement(
         graphml,
         "key",
+        id="requirement",
+        **{"for": "edge", "attr.name": "requirement", "attr.type": "string"},
+    )
+    ET.SubElement(
+        graphml,
+        "key",
         id="name",
         **{"for": "edge", "attr.name": "name", "attr.type": "string"},
     )
@@ -209,6 +216,8 @@ def create_graphml_tree(nodes, edges):
         data_element.text = node.label
         data_size = ET.SubElement(node_element, "data", key="size_")
         data_size.text = str(node.size)
+        data_element = ET.SubElement(node_element, "data", key="requirement")
+        data_element.text = node.requirement
 
     # Add edges
     for edge in edges:
@@ -237,16 +246,16 @@ def create_dashscape_tree(nodes, edges, study_level, language):
         if node.type == "major-concept":
             major_node = node
             break
-    dashscape_major_node = {'data': {'id': major_node.id, 'label': major_node.label, 'study_level': study_level, 'language': language}}
+    dashscape_major_node = {'data': {'id': major_node.id, 'label': major_node.label, 'study_level': study_level, 'language': language, 'requirement': major_node.requirement}}
 
     # Create the graph
     graph = {}
     graph[major_node.id] = {'nodes': [], 'edges': []}
 
     # Get nodes as concepts
-    nodes = [n for n in nodes if n.type == "concept"]
-    graph[major_node.id]['nodes'] = [{'data': {'id': n.id, 'label': n.label}} for n in nodes]
-    node_ids = set([n.id for n in nodes])
+    std_nodes = [n for n in nodes if n.type == "concept"]
+    graph[major_node.id]['nodes'] = [{'data': {'id': n.id, 'label': n.label, 'requirement': n.requirement}} for n in std_nodes]
+    node_ids = set([n.id for n in std_nodes])
 
     # Get edges between normal nodes
     major_edges = [e for e in edges if e.source in node_ids and e.target in node_ids]
@@ -254,6 +263,9 @@ def create_dashscape_tree(nodes, edges, study_level, language):
 
     # Get edges from normal nodes to micro nodes
     edge_major_to_micro = [e for e in edges if e.target in node_ids and e.source not in node_ids]
+
+    # Create node dict by id for faster lookup
+    node_dict = {n.id: n for n in nodes}
 
     # Create subgraphs
     subgraphs = {}
@@ -265,8 +277,9 @@ def create_dashscape_tree(nodes, edges, study_level, language):
         }
         for edge in edge_major_to_micro:
             if edge.target == node_id:
-                subgraph_nodes.add(edge.source)
-                subgraphs[node_id]['nodes'].append({'data': {'id': edge.source, 'label': edge.source.split('__')[0].replace('_', ' ').capitalize()}})
+                node = node_dict[edge.source] 
+                subgraph_nodes.add(node.id)
+                subgraphs[node_id]['nodes'].append({'data': {'id': node.id, 'label': node.id.split('__')[0].replace('_', ' ').capitalize(), 'requirement': node.requirement}})
         subgraphs[node_id]['edges'] = [{'data': {'source': edge.source, 'target': edge.target}} for edge in edges if edge.source in subgraph_nodes and edge.target in subgraph_nodes]
 
     with open(f'docs/graph_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
