@@ -158,31 +158,16 @@ def process_message(concept_idx: int, concepts: list, subject: str, study_level:
         edges_ = add_edges(nodes_, edges_, concept.id, "micro-concept")
     return nodes_, edges_
 
-def add_requirements(language: str, requirements_path: str, nodes: List[Node]) -> List[Node]:
+def grade_subgraph(subgraph: Tuple[str, List[Node]] , prompt: str, language: str, grade_content: dict) -> None:
     '''
     This function adds grade requirements to the nodes.
-
-    Parameters:
-    language (str): The output language.
-    requirements_path (str): The path to the csv requirements file.
-    nodes (list): The list of nodes.
-
-    Returns:
-    list: The list of nodes.
     '''
-    node_labels = [n.label for n in nodes if n.type == "micro-concept"]
-    prompt = open("docs/grade_requirements.txt", "r").read()
-    curr_outcomes = pd.read_csv(requirements_path, dtype=str)
-    # get the doporucena_trida and vystup columns as tuple
-    curr_outcomes = curr_outcomes[['doporucena_trida', 'vystup']].apply(tuple, axis=1).tolist()
+    logging.info(f"Processing grade requirements for {subgraph[0]}")
 
-    grade_content = {}
-    for grade, content in curr_outcomes:
-        if grade not in grade_content:
-            grade_content[grade] = []
-        grade_content[grade].append(content)
+    subject, nodes = subgraph
+    node_labels = [n.label for n in nodes]
 
-    text = f"""Language: {language}\n\nConcepts: {node_labels}\n\nCurriculum outcomes: {grade_content}"""
+    text = f"""Language: {language}\n\nConcepts about {subject}: {node_labels}\n\nCurriculum outcomes: {grade_content}"""
 
     messages = [
         {"role": "system", "content": prompt},
@@ -203,16 +188,50 @@ def add_requirements(language: str, requirements_path: str, nodes: List[Node]) -
 
     lines = response.split('\n')
     i = 0
-    for node in nodes:
-        if node.type != "micro-concept":
-            continue
-        line = lines[i]
-        i += 1
+    for node, line in zip(nodes, lines):
         label, req = line.split(': ')
         if label == node.label:
             node.requirement = req
         else:
             logging.info(f"Label mismatch: {label} != {node.label}")
+
+def add_requirements(language: str, requirements_path: str, nodes: List[Node]) -> List[Node]:
+    '''
+    This function adds grade requirements to the nodes.
+
+    Parameters:
+    language (str): The output language.
+    requirements_path (str): The path to the csv requirements file.
+    nodes (list): The list of nodes.
+
+    Returns:
+    list: The list of nodes.
+    '''
+    subgraphs = {}
+    curr_concept = None
+    for node in nodes:
+        if node.type != 'micro-concept':
+            continue
+        node_concept = node.id.split('__')[1]
+        if curr_concept != node_concept:
+            curr_concept = node_concept
+            subgraphs[curr_concept] = []
+        subgraphs[curr_concept].append(node)
+
+    prompt = open("docs/grade_requirements.txt", "r").read()
+    curr_outcomes = pd.read_csv(requirements_path, dtype=str)
+    curr_outcomes = curr_outcomes[['doporucena_trida', 'vystup']].apply(tuple, axis=1).tolist()
+    grade_content = {}
+
+    for grade, content in curr_outcomes:
+        if grade not in grade_content:
+            grade_content[grade] = []
+        grade_content[grade].append(content)
+
+    grade_subgraph_partial = partial(grade_subgraph, prompt=prompt, language=language, grade_content=grade_content)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        executor.map(grade_subgraph_partial, subgraphs.items())
 
     return nodes
 
