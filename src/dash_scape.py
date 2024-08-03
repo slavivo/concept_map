@@ -34,12 +34,11 @@ app.layout = html.Div([
         },
         style={'width': '100%', 'height': '400px', 'opacity': '1', 'transition': 'opacity 0.5s ease'},
         stylesheet=[
-            {'selector': '[requirement = ""]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px'}},
-            {'selector': '[requirement = "o"]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px'}},
-            {'selector': '[requirement = "6."]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px', 'background-color': '#90EE90'}},
-            {'selector': '[requirement = "7."]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px', 'background-color': '#FFFFE0'}},
-            {'selector': '[requirement = "8."]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px', 'background-color': '#FFA07A'}},
-            {'selector': '[requirement = "9."]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px', 'background-color': '#FF6347'}},
+            {'selector': '[requirement = -1]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px'}},
+            {'selector': '[requirement = 6]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px', 'background-color': '#90EE90'}},
+            {'selector': '[requirement = 7]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px', 'background-color': 'yellow'}},
+            {'selector': '[requirement = 8]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px', 'background-color': '#FFA07A'}},
+            {'selector': '[requirement = 9]', 'style': {'label': 'data(label)', 'width': '10px', 'height': '10px', 'font-size': '10px', 'opacity': '1', 'text-wrap': 'wrap', 'text-max-width': '30px', 'background-color': '#FF6347'}},
             {'selector': 'edge', 'style': {'curve-style': 'bezier', 'width': '0.5px', 'opacity': '0.5', 'target-arrow-shape': 'triangle', 'arrow-scale': 0.5, 'target-arrow-color': '#000', 'line-color': '#000'}}
         ]
     ),

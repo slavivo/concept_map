@@ -191,11 +191,11 @@ def grade_subgraph(subgraph: Tuple[str, List[Node]] , prompt: str, language: str
     for node, line in zip(nodes, lines):
         label, req = line.split(': ')
         if label == node.label:
-            node.requirement = req
+            node.requirement = int(req)
         else:
             logging.info(f"Label mismatch: {label} != {node.label}")
 
-def add_requirements(language: str, requirements_path: str, nodes: List[Node]) -> List[Node]:
+def add_requirements(language: str, requirements_path: str, nodes: List[Node], edges: List[Edge]) -> List[Node]:
     '''
     This function adds grade requirements to the nodes.
 
@@ -203,6 +203,7 @@ def add_requirements(language: str, requirements_path: str, nodes: List[Node]) -
     language (str): The output language.
     requirements_path (str): The path to the csv requirements file.
     nodes (list): The list of nodes.
+    edges (list): The list of edges.
 
     Returns:
     list: The list of nodes.
@@ -219,7 +220,9 @@ def add_requirements(language: str, requirements_path: str, nodes: List[Node]) -
         subgraphs[curr_concept].append(node)
 
     prompt = open("docs/grade_requirements.txt", "r").read()
-    curr_outcomes = pd.read_csv(requirements_path, dtype=str)
+    curr_outcomes = pd.read_csv(requirements_path)
+    curr_outcomes['doporucena_trida'] = curr_outcomes['doporucena_trida'].astype(int)
+    curr_outcomes['vystup'] = curr_outcomes['vystup'].astype(str)
     curr_outcomes = curr_outcomes[['doporucena_trida', 'vystup']].apply(tuple, axis=1).tolist()
     grade_content = {}
 
@@ -232,6 +235,47 @@ def add_requirements(language: str, requirements_path: str, nodes: List[Node]) -
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         executor.map(grade_subgraph_partial, subgraphs.items())
+
+    # node lookup dict
+    node_dict = {node.id: node for node in nodes if node.type == 'micro-concept'}
+
+    # edge lookup dicts
+    edge_source_dict = {}
+    edge_target_dict = {}
+    for edge in edges:
+        if edge.source not in node_dict or edge.target not in node_dict:
+            continue
+        if edge.source not in edge_source_dict:
+            edge_source_dict[edge.source] = []
+        edge_source_dict[edge.source].append(edge)
+        if edge.target not in edge_target_dict:
+            edge_target_dict[edge.target] = []
+        edge_target_dict[edge.target].append(edge)
+
+    def recursive_propagate(node, active, child_req, visited):
+        if node.id in visited:
+            return node.requirement
+        visited.add(node.id)
+        parents = edge_target_dict.get(node.id, [])
+        parents = [node_dict[edge.source] for edge in parents]
+        if not active and node.requirement != -1:
+            active = True
+        if active and node.requirement == -1:
+            node.requirement = child_req
+        for parent in parents:
+            req = recursive_propagate(parent, active, node.requirement, visited)
+            if active:
+                node.requirement = max(node.requirement, req)
+        return node.requirement
+
+    # Propagate requirements to the parent nodes 
+    for subgraph in subgraphs.values():
+        # get leaf nodes
+        root_nodes = [node for node in subgraph if node.id not in edge_source_dict and node.type == 'micro-concept']
+
+        for node in root_nodes:
+            visited = set(node.id)
+            _ = recursive_propagate(node, node.requirement != -1, node.requirement, visited) 
 
     return nodes
 
@@ -309,7 +353,7 @@ def main() -> None:
 
     # Add grade requirements
     if requirements_path:
-        nodes = add_requirements(language, requirements_path, nodes)
+        nodes = add_requirements(language, requirements_path, nodes, edges)
 
     # Create .graphml and dashscape tree
     if not args.nooutput:

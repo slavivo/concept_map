@@ -63,7 +63,7 @@ class RequestParams:
         }
 
 
-@retry(wait=wait_random_exponential(multiplier=2, max=60), stop=stop_after_attempt(5))
+@retry(wait=wait_random_exponential(multiplier=4, exp_base=4, max=20), stop=stop_after_attempt(5))
 def chat_completion_request(
     params: RequestParams,
 ) -> openai.types.chat.chat_completion.ChatCompletion:
@@ -113,7 +113,7 @@ def print_logprobs(logprobs):
 
 
 class Node:
-    def __init__(self, id_, label, type_, size, requirement=''):
+    def __init__(self, id_, label, type_, size, requirement=-1):
         self.id = id_
         self.label = label
         self.type = type_
@@ -217,7 +217,7 @@ def create_graphml_tree(nodes, edges):
         data_size = ET.SubElement(node_element, "data", key="size_")
         data_size.text = str(node.size)
         data_element = ET.SubElement(node_element, "data", key="requirement")
-        data_element.text = node.requirement
+        data_element.text = str(node.requirement)
 
     # Add edges
     for edge in edges:

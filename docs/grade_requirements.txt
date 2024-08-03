@@ -9,7 +9,7 @@ Curriculum outputs: A JSON object each key is, and the corresponding value is a 
 -Steps-
 1. For each concept in the Concepts list, determine the appropriate grade level using the Curriculum Outputs. 
 2. Consider both direct matches and prerequisites for determining grade levels.
-3. If the concept is not found in the curriculum JSON, classify it as "o".
+3. If the concept is not found in the curriculum JSON, classify it as "-1".
 
 -Output-
 Format the output for each concept as follows without any additional text:
