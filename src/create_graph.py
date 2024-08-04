@@ -13,6 +13,7 @@ from utils import (
     create_graphml_tree,
     RequestParams,
     chat_completion_request,
+    requirement_propagation
 )
 
 # Read the config file
@@ -236,46 +237,7 @@ def add_requirements(language: str, requirements_path: str, nodes: List[Node], e
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         executor.map(grade_subgraph_partial, subgraphs.items())
 
-    # node lookup dict
-    node_dict = {node.id: node for node in nodes if node.type == 'micro-concept'}
-
-    # edge lookup dicts
-    edge_source_dict = {}
-    edge_target_dict = {}
-    for edge in edges:
-        if edge.source not in node_dict or edge.target not in node_dict:
-            continue
-        if edge.source not in edge_source_dict:
-            edge_source_dict[edge.source] = []
-        edge_source_dict[edge.source].append(edge)
-        if edge.target not in edge_target_dict:
-            edge_target_dict[edge.target] = []
-        edge_target_dict[edge.target].append(edge)
-
-    def recursive_propagate(node, active, child_req, visited):
-        if node.id in visited:
-            return node.requirement
-        visited.add(node.id)
-        parents = edge_target_dict.get(node.id, [])
-        parents = [node_dict[edge.source] for edge in parents]
-        if not active and node.requirement != -1:
-            active = True
-        if active and node.requirement == -1:
-            node.requirement = child_req
-        for parent in parents:
-            req = recursive_propagate(parent, active, node.requirement, visited)
-            if active:
-                node.requirement = max(node.requirement, req)
-        return node.requirement
-
-    # Propagate requirements to the parent nodes 
-    for subgraph in subgraphs.values():
-        # get leaf nodes
-        root_nodes = [node for node in subgraph if node.id not in edge_source_dict and node.type == 'micro-concept']
-
-        for node in root_nodes:
-            visited = set(node.id)
-            _ = recursive_propagate(node, node.requirement != -1, node.requirement, visited) 
+    requirement_propagation(subgraphs, edges)
 
     return nodes
 

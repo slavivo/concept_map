@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Dict
+from typing import Dict, List
 import openai
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 import datetime
@@ -284,3 +284,51 @@ def create_dashscape_tree(nodes, edges, study_level, language):
 
     with open(f'docs/graph_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.pkl', 'wb') as f:
         pickle.dump(([dashscape_major_node], graph, subgraphs), f)
+
+def requirement_propagation(subgraphs: dict[str, Node] , edges: List[Edge]):
+    '''
+    This function propagates requirements to the parent nodes.
+    '''
+    # node lookup dict
+    nodes = [node for subgraph in subgraphs.values() for node in subgraph]
+    node_dict = {node.id: node for node in nodes if node.type == 'micro-concept'}
+
+    # edge lookup dicts
+    edge_source_dict = {}
+    edge_target_dict = {}
+    for edge in edges:
+        if edge.source not in node_dict or edge.target not in node_dict:
+            continue
+        if edge.source not in edge_source_dict:
+            edge_source_dict[edge.source] = []
+        edge_source_dict[edge.source].append(edge)
+        if edge.target not in edge_target_dict:
+            edge_target_dict[edge.target] = []
+        edge_target_dict[edge.target].append(edge)
+
+    def recursive_propagate(node, active, child_req, processing):
+        if node.id in processing:
+            return node.requirement
+        processing.add(node.id)
+        parents = edge_target_dict.get(node.id, [])
+        parents = [node_dict[edge.source] for edge in parents]
+        if not active and node.requirement != -1:
+            active = True
+        if active and node.requirement == -1:
+            node.requirement = child_req
+        for parent in parents:
+            req = recursive_propagate(parent, active, node.requirement, processing)
+            if active:
+                node.requirement = max(node.requirement, req)
+        processing.remove(node.id)
+        return node.requirement
+
+    # Propagate requirements to the parent nodes 
+    for subgraph in subgraphs.values():
+        # get leaf nodes
+        leaf_nodes = [node for node in subgraph if node.id not in edge_source_dict and node.type == 'micro-concept']
+
+        for node in leaf_nodes:
+            processing = set(node.id)
+            _ = recursive_propagate(node, node.requirement != -1, node.requirement, processing) 
+    return nodes

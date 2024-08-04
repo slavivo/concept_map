@@ -11,6 +11,7 @@ app = dash.Dash(__name__)
 parser = argparse.ArgumentParser()
 parser.add_argument("-f", "--file", help="The file to load the graph from (.pkl file)", required=True)
 parser.add_argument("-p", "--port", help="The port to run the server on", default=8050)
+parser.add_argument("-r", "--requirements", help="The file to load the requirements from (.csv file)", default=None)
 args = parser.parse_args()
 
 with open(args.file, 'rb') as f:
@@ -67,9 +68,13 @@ def regenerate_subgraph(current_view, current_major):
         False
     )
 
+    # Add requirements to the nodes
+    if args.requirements:
+        nodes = create_graph.add_requirements(current_major['language'], args.requirements, nodes, edges)
+
     # Update the subgraphs
     subgraphs[current_view['parent']] = {
-        'nodes': [{'data': {'id': n.id, 'label': n.label}} for n in nodes], 
+        'nodes': [{'data': {'id': n.id, 'label': n.label, 'requirement': n.requirement}} for n in nodes], 
         'edges': [{'data': {'source': e.source, 'target': e.target}} for e in edges]
     }
 
