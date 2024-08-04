@@ -49,11 +49,21 @@ python3 src/dash_scape.py -f <path_to_pkl_graph_file>
 
 2. Standard graph visualization - Gephi
 
+Note that in the interactibe hierarchical graph you have the option of regenerating subgraphs and saving them. But in order to also generate gra requirements you also need to include the path to a .csv file (like docs/inf_rvp.csv) containing the requirements. For example:
+```bash
+python3 src/dash_scape.py -f <path_to_pkl_graph_file> -r <path_to_csv_file>
+```
+
 ### Example
 
-A knowledge graph for the subject "Mathematics" in English at the "8th grade" level.
+A knowledge graph for the subject "Informatics" in Czech at the "9th grade" level.
 
-[View the knowledge graph here](docs/example_graph.pdf)
+Color coding is done based on the RVP (Rámcový vzdělávací program) for the Czech Republic. The colors are as follows:
+- Green - 6th grade
+- Yellow - 7th grade
+- Orange - 8th grade
+- Red - 9th grade
+- Gray - optional
 
 ![](docs/example_graph.gif)
 
